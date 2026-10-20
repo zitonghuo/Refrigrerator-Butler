@@ -24,7 +24,8 @@ from urllib.parse import urlparse, parse_qs
 ROOT = Path(__file__).resolve().parents[1]
 DB = Path(os.environ.get('FRIDGE_DB', str(ROOT / 'data' / 'fridge.db')))
 ZONE = dt.timezone(dt.timedelta(hours=8))
-LOCAL_VISION_ROOT = Path(os.environ.get('LOCAL_VISION_ROOT', str(ROOT / 'vision')))
+# 识别服务在仓库根目录（与 local-demo 同级），也可用环境变量覆盖。
+LOCAL_VISION_ROOT = Path(os.environ.get('LOCAL_VISION_ROOT', str(ROOT.parent / 'vision')))
 LOCAL_VISION_PROCESS = None
 APP_VERSION = '1.1.0'
 SESSION_DAYS = max(1,int(os.environ.get('FRIDGE_SESSION_DAYS','30')))
