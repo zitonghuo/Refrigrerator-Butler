@@ -1,0 +1,11 @@
+.venv/
+.runtime/
+__pycache__/
+*.pyc
+*.egg-info/
+datasets/
+runs/
+outputs/
+samples/
+tests/
+docs/

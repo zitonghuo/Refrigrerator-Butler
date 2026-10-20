@@ -1,0 +1,244 @@
+{
+  "version": 1,
+  "category_defaults": {
+    "水果": {
+      "storage": ["冷藏"],
+      "default_storage": "冷藏",
+      "default_unit": "个",
+      "purchase_unit": "个/盒",
+      "shelf_life_days": {"冷藏": [3, 7]},
+      "package_expected": false,
+      "food_safety_note": "参考天数会因成熟度和包装状态变化，请以实际状态为准。"
+    },
+    "蔬菜": {
+      "storage": ["冷藏"],
+      "default_storage": "冷藏",
+      "default_unit": "份",
+      "purchase_unit": "份/袋/斤",
+      "shelf_life_days": {"冷藏": [2, 5]},
+      "package_expected": false,
+      "food_safety_note": "叶菜和切开的蔬菜应尽快冷藏，参考天数不是安全保证。"
+    },
+    "蛋奶豆制品": {
+      "storage": ["冷藏"],
+      "default_storage": "冷藏",
+      "default_unit": "盒",
+      "purchase_unit": "盒/袋",
+      "shelf_life_days": {"冷藏": [3, 7]},
+      "package_expected": true,
+      "food_safety_note": "开封后应尽快食用，并优先读取包装日期。"
+    },
+    "肉禽水产": {
+      "storage": ["冷藏", "冷冻"],
+      "default_storage": "冷冻",
+      "default_unit": "份",
+      "purchase_unit": "盒/袋/斤",
+      "shelf_life_days": {"冷藏": [1, 2], "冷冻": [30, 90]},
+      "package_expected": true,
+      "food_safety_note": "生熟分开存放，冷藏仅适合短期保存。"
+    },
+    "冷冻速食": {
+      "storage": ["冷冻"],
+      "default_storage": "冷冻",
+      "default_unit": "袋",
+      "purchase_unit": "袋/盒",
+      "shelf_life_days": {"冷冻": [30, 180]},
+      "package_expected": true,
+      "food_safety_note": "开封后请按包装说明保存和加热。"
+    },
+    "熟食剩菜": {
+      "storage": ["冷藏"],
+      "default_storage": "冷藏",
+      "default_unit": "盒",
+      "purchase_unit": "盒/份",
+      "shelf_life_days": {"冷藏": [1, 2]},
+      "package_expected": false,
+      "food_safety_note": "熟食和剩菜应尽快冷藏，食用前充分加热。"
+    }
+  },
+  "overrides": {
+    "apple": {"aliases_zh": ["苹果"], "default_unit": "个"},
+    "pear": {"aliases_zh": ["梨", "雪梨"], "default_unit": "个"},
+    "peach": {"aliases_zh": ["桃子", "水蜜桃"], "default_unit": "个"},
+    "grape": {"aliases_zh": ["葡萄", "提子"], "default_unit": "串/盒", "countable": false},
+    "strawberry": {"aliases_zh": ["草莓"], "default_unit": "盒", "countable": false},
+    "blueberry": {"aliases_zh": ["蓝莓"], "default_unit": "盒", "countable": false},
+    "cherry": {"aliases_zh": ["樱桃", "车厘子"], "default_unit": "盒", "countable": false},
+    "kiwi": {"aliases_zh": ["猕猴桃", "奇异果"], "default_unit": "个"},
+    "orange": {"aliases_zh": ["橙子", "脐橙"], "default_unit": "个"},
+    "mandarin": {"aliases_zh": ["橘子", "桔子", "砂糖橘"], "default_unit": "个"},
+    "grapefruit": {"aliases_zh": ["柚子", "西柚"], "default_unit": "个"},
+    "lemon": {"aliases_zh": ["柠檬"], "default_unit": "个"},
+    "mango": {"aliases_zh": ["芒果"], "default_unit": "个"},
+    "pineapple": {"aliases_zh": ["菠萝", "凤梨"], "default_unit": "个"},
+    "watermelon": {"aliases_zh": ["西瓜"], "default_unit": "个/块"},
+    "cantaloupe": {"aliases_zh": ["哈密瓜"], "default_unit": "个/块"},
+    "melon": {"aliases_zh": ["甜瓜", "香瓜"], "default_unit": "个"},
+    "pomegranate": {"aliases_zh": ["石榴"], "default_unit": "个"},
+    "avocado": {"aliases_zh": ["牛油果", "鳄梨"], "default_unit": "个"},
+    "tomato": {"aliases_zh": ["番茄", "西红柿"], "default_unit": "个", "common_confusions": ["苹果"]},
+    "cucumber": {"aliases_zh": ["黄瓜", "青瓜"], "default_unit": "根"},
+    "carrot": {"aliases_zh": ["胡萝卜", "红萝卜"], "default_unit": "根"},
+    "broccoli": {"aliases_zh": ["西兰花", "绿花菜"], "default_unit": "颗"},
+    "cauliflower": {"aliases_zh": ["菜花", "花椰菜"], "default_unit": "颗"},
+    "cabbage": {"aliases_zh": ["卷心菜", "圆白菜", "包菜"], "default_unit": "颗"},
+    "chinese_cabbage": {"aliases_zh": ["大白菜", "白菜"], "default_unit": "颗"},
+    "bok_choy": {"aliases_zh": ["上海青", "小白菜", "青菜"], "default_unit": "把"},
+    "spinach": {"aliases_zh": ["菠菜"], "default_unit": "把"},
+    "lettuce": {"aliases_zh": ["生菜", "叶生菜"], "default_unit": "颗/把"},
+    "celery": {"aliases_zh": ["芹菜", "西芹"], "default_unit": "把"},
+    "bell_pepper": {"aliases_zh": ["甜椒", "彩椒", "灯笼椒"], "default_unit": "个"},
+    "chili_pepper": {"aliases_zh": ["辣椒", "青椒", "尖椒"], "default_unit": "个/把"},
+    "eggplant": {"aliases_zh": ["茄子"], "default_unit": "根"},
+    "zucchini": {"aliases_zh": ["西葫芦"], "default_unit": "根"},
+    "winter_melon": {"aliases_zh": ["冬瓜"], "default_unit": "块"},
+    "bitter_melon": {"aliases_zh": ["苦瓜"], "default_unit": "根"},
+    "pumpkin": {"aliases_zh": ["南瓜"], "default_unit": "块"},
+    "radish": {"aliases_zh": ["萝卜", "白萝卜"], "default_unit": "根"},
+    "corn": {"aliases_zh": ["玉米", "甜玉米"], "default_unit": "根"},
+    "asparagus": {"aliases_zh": ["芦笋"], "default_unit": "把"},
+    "green_bean": {"aliases_zh": ["四季豆", "豆角"], "default_unit": "把"},
+    "pea": {"aliases_zh": ["豌豆", "青豆"], "default_unit": "袋"},
+    "mushroom": {"aliases_zh": ["蘑菇", "口蘑"], "default_unit": "盒"},
+    "shiitake": {"aliases_zh": ["香菇", "冬菇"], "default_unit": "盒"},
+    "enoki_mushroom": {"aliases_zh": ["金针菇"], "default_unit": "袋"},
+    "wood_ear": {"aliases_zh": ["木耳", "黑木耳"], "default_unit": "盒"},
+    "lotus_root": {"aliases_zh": ["莲藕", "藕"], "default_unit": "节"},
+    "yam": {"aliases_zh": ["山药", "淮山"], "default_unit": "根"},
+    "taro": {"aliases_zh": ["芋头", "香芋"], "default_unit": "个"},
+    "okra": {"aliases_zh": ["秋葵"], "default_unit": "盒"},
+    "scallion": {"aliases_zh": ["小葱", "香葱", "葱"], "default_unit": "把"},
+    "egg": {
+      "aliases_zh": ["鸡蛋", "蛋"],
+      "default_unit": "个",
+      "purchase_unit": "枚/盒",
+      "shelf_life_days": {"冷藏": [21, 35]},
+      "package_expected": true
+    },
+    "milk": {
+      "aliases_zh": ["牛奶", "鲜奶", "纯牛奶"],
+      "default_unit": "盒",
+      "shelf_life_days": {"冷藏": [5, 10]},
+      "package_expected": true
+    },
+    "yogurt": {
+      "aliases_zh": ["酸奶", "酸牛奶"],
+      "default_unit": "杯/盒",
+      "shelf_life_days": {"冷藏": [7, 21]},
+      "package_expected": true
+    },
+    "cheese": {
+      "aliases_zh": ["奶酪", "芝士"],
+      "default_unit": "盒/片",
+      "shelf_life_days": {"冷藏": [7, 30]},
+      "package_expected": true
+    },
+    "butter": {
+      "aliases_zh": ["黄油", "奶油块"],
+      "default_unit": "盒",
+      "shelf_life_days": {"冷藏": [30, 90], "冷冻": [180, 365]},
+      "package_expected": true
+    },
+    "soy_milk": {
+      "aliases_zh": ["豆浆"],
+      "default_unit": "袋/瓶",
+      "shelf_life_days": {"冷藏": [1, 3]},
+      "package_expected": true
+    },
+    "tofu": {
+      "aliases_zh": ["豆腐", "嫩豆腐", "老豆腐"],
+      "default_unit": "盒",
+      "shelf_life_days": {"冷藏": [2, 5]},
+      "package_expected": true
+    },
+    "dried_tofu": {
+      "aliases_zh": ["豆干", "香干"],
+      "default_unit": "袋",
+      "shelf_life_days": {"冷藏": [5, 15]},
+      "package_expected": true
+    },
+    "pork": {"aliases_zh": ["猪肉", "瘦肉"], "common_confusions": ["牛肉", "羊肉"]},
+    "pork_belly": {"aliases_zh": ["五花肉"], "common_confusions": ["猪肉", "培根"]},
+    "pork_ribs": {"aliases_zh": ["排骨", "猪排骨"]},
+    "beef": {"aliases_zh": ["牛肉"], "common_confusions": ["猪肉", "羊肉"]},
+    "beef_brisket": {"aliases_zh": ["牛腩"]},
+    "lamb": {"aliases_zh": ["羊肉"], "common_confusions": ["牛肉"]},
+    "chicken": {"aliases_zh": ["鸡肉", "整鸡"]},
+    "chicken_breast": {"aliases_zh": ["鸡胸肉", "鸡胸"]},
+    "chicken_wing": {"aliases_zh": ["鸡翅", "翅中"], "countable": true},
+    "fish": {"aliases_zh": ["鱼", "鲜鱼", "鱼片"]},
+    "shrimp": {"aliases_zh": ["虾", "鲜虾", "虾仁"]},
+    "crab": {"aliases_zh": ["螃蟹", "蟹"], "countable": true},
+    "squid": {"aliases_zh": ["鱿鱼"]},
+    "dumpling": {
+      "aliases_zh": ["饺子", "水饺"],
+      "default_unit": "袋",
+      "shelf_life_days": {"冷冻": [90, 180]},
+      "package_expected": true
+    },
+    "wonton": {
+      "aliases_zh": ["馄饨", "云吞"],
+      "default_unit": "袋",
+      "shelf_life_days": {"冷冻": [90, 180]},
+      "package_expected": true
+    },
+    "steamed_bun": {
+      "aliases_zh": ["包子"],
+      "default_unit": "袋/个",
+      "shelf_life_days": {"冷藏": [2, 3], "冷冻": [30, 90]},
+      "package_expected": true
+    },
+    "meatball": {
+      "aliases_zh": ["丸子", "肉丸", "鱼丸"],
+      "default_unit": "袋",
+      "shelf_life_days": {"冷冻": [60, 180]},
+      "package_expected": true
+    },
+    "sausage": {
+      "aliases_zh": ["香肠", "腊肠"],
+      "default_unit": "袋/根",
+      "shelf_life_days": {"冷藏": [7, 30], "冷冻": [90, 180]},
+      "package_expected": true
+    },
+    "ham": {
+      "aliases_zh": ["火腿", "火腿肠"],
+      "default_unit": "袋/根",
+      "shelf_life_days": {"冷藏": [5, 15]},
+      "package_expected": true
+    },
+    "bacon": {
+      "aliases_zh": ["培根"],
+      "default_unit": "袋",
+      "shelf_life_days": {"冷藏": [3, 7], "冷冻": [30, 90]},
+      "package_expected": true
+    }
+  },
+  "additional_classes": [
+    {"id": "dragon_fruit", "name_zh": "火龙果", "name_en": "dragon fruit", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "个", "countable": true, "aliases_zh": ["红心火龙果", "白心火龙果"], "model_labels": [], "prompt": "dragon fruit", "shelf_life_days": {"冷藏": [3, 7]}},
+    {"id": "lychee", "name_zh": "荔枝", "name_en": "lychee", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["荔枝"], "model_labels": [], "prompt": "lychee", "shelf_life_days": {"冷藏": [2, 5]}},
+    {"id": "longan", "name_zh": "龙眼", "name_en": "longan", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["龙眼", "桂圆"], "model_labels": [], "prompt": "longan", "shelf_life_days": {"冷藏": [3, 7]}},
+    {"id": "papaya", "name_zh": "木瓜", "name_en": "papaya", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "个", "countable": true, "aliases_zh": ["木瓜"], "model_labels": ["papaya"], "prompt": "papaya", "shelf_life_days": {"冷藏": [3, 7]}},
+    {"id": "bayberry", "name_zh": "杨梅", "name_en": "Chinese bayberry", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["杨梅"], "model_labels": [], "prompt": "Chinese bayberry", "shelf_life_days": {"冷藏": [1, 3]}},
+    {"id": "passion_fruit", "name_zh": "百香果", "name_en": "passion fruit", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "个", "countable": true, "aliases_zh": ["百香果"], "model_labels": [], "prompt": "passion fruit", "shelf_life_days": {"冷藏": [5, 14]}},
+    {"id": "plum", "name_zh": "李子", "name_en": "plum", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "个", "countable": true, "aliases_zh": ["李子", "青李", "红李"], "model_labels": [], "prompt": "plum", "shelf_life_days": {"冷藏": [3, 7]}},
+    {"id": "bean_sprout", "name_zh": "豆芽", "name_en": "bean sprout", "category": "蔬菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "袋", "countable": false, "aliases_zh": ["豆芽", "黄豆芽", "绿豆芽"], "model_labels": [], "prompt": "bean sprout", "shelf_life_days": {"冷藏": [1, 3]}},
+    {"id": "chives", "name_zh": "韭菜", "name_en": "chives", "category": "蔬菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "把", "countable": false, "aliases_zh": ["韭菜"], "model_labels": [], "prompt": "Chinese chives", "shelf_life_days": {"冷藏": [2, 4]}},
+    {"id": "garlic_sprout", "name_zh": "蒜薹", "name_en": "garlic sprout", "category": "蔬菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "把", "countable": false, "aliases_zh": ["蒜薹", "蒜苔"], "model_labels": [], "prompt": "garlic sprout", "shelf_life_days": {"冷藏": [3, 7]}},
+    {"id": "celtuce", "name_zh": "莴笋", "name_en": "celtuce", "category": "蔬菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "根", "countable": true, "aliases_zh": ["莴笋", "莴苣"], "model_labels": [], "prompt": "celtuce", "shelf_life_days": {"冷藏": [3, 7]}},
+    {"id": "chicken_leg", "name_zh": "鸡腿", "name_en": "chicken leg", "category": "肉禽水产", "storage": ["冷藏", "冷冻"], "default_storage": "冷冻", "default_unit": "个", "countable": true, "aliases_zh": ["鸡腿", "琵琶腿"], "model_labels": [], "prompt": "chicken leg", "shelf_life_days": {"冷藏": [1, 2], "冷冻": [30, 90]}},
+    {"id": "duck", "name_zh": "鸭肉", "name_en": "duck meat", "category": "肉禽水产", "storage": ["冷藏", "冷冻"], "default_storage": "冷冻", "default_unit": "份", "countable": false, "aliases_zh": ["鸭肉", "鸭腿", "鸭翅"], "model_labels": [], "prompt": "duck meat", "shelf_life_days": {"冷藏": [1, 2], "冷冻": [30, 90]}},
+    {"id": "shellfish", "name_zh": "贝类", "name_en": "shellfish", "category": "肉禽水产", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "斤/袋", "countable": false, "aliases_zh": ["贝类", "蛤蜊", "花甲", "扇贝"], "model_labels": [], "prompt": "shellfish", "shelf_life_days": {"冷藏": [1, 2]}},
+    {"id": "salmon", "name_zh": "三文鱼", "name_en": "salmon", "category": "肉禽水产", "storage": ["冷藏", "冷冻"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["三文鱼", "鲑鱼"], "model_labels": [], "prompt": "salmon fillet", "shelf_life_days": {"冷藏": [1, 2], "冷冻": [30, 60]}},
+    {"id": "cream", "name_zh": "奶油", "name_en": "cream", "category": "蛋奶豆制品", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["淡奶油", "动物奶油"], "model_labels": [], "prompt": "cream carton", "shelf_life_days": {"冷藏": [5, 14]}},
+    {"id": "glue_rice_ball", "name_zh": "汤圆", "name_en": "glutinous rice ball", "category": "冷冻速食", "storage": ["冷冻"], "default_storage": "冷冻", "default_unit": "袋", "countable": false, "aliases_zh": ["汤圆", "元宵"], "model_labels": [], "prompt": "frozen glutinous rice ball", "shelf_life_days": {"冷冻": [90, 180]}},
+    {"id": "frozen_vegetables", "name_zh": "冷冻蔬菜", "name_en": "frozen mixed vegetables", "category": "冷冻速食", "storage": ["冷冻"], "default_storage": "冷冻", "default_unit": "袋", "countable": false, "aliases_zh": ["冷冻蔬菜", "混合蔬菜"], "model_labels": [], "prompt": "frozen mixed vegetables", "shelf_life_days": {"冷冻": [90, 180]}},
+    {"id": "fresh_noodles", "name_zh": "鲜面条", "name_en": "fresh noodles", "category": "蛋奶豆制品", "storage": ["冷藏", "冷冻"], "default_storage": "冷藏", "default_unit": "袋", "countable": false, "aliases_zh": ["鲜面条", "湿面"], "model_labels": [], "prompt": "fresh noodles", "shelf_life_days": {"冷藏": [2, 5], "冷冻": [30, 90]}, "food_safety_note": "鲜面属于易腐食品，开封后尽快冷藏或冷冻。"},
+    {"id": "leftover_rice", "name_zh": "剩米饭", "name_en": "leftover cooked rice", "category": "熟食剩菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["剩米饭", "剩饭"], "model_labels": [], "prompt": "leftover cooked rice in container", "shelf_life_days": {"冷藏": [1, 2]}},
+    {"id": "leftovers", "name_zh": "剩菜", "name_en": "leftovers", "category": "熟食剩菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["剩菜", "打包菜"], "model_labels": [], "prompt": "leftovers in container", "shelf_life_days": {"冷藏": [1, 2]}},
+    {"id": "cooked_meat", "name_zh": "熟肉", "name_en": "cooked meat", "category": "熟食剩菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["熟肉", "卤肉", "熟食"], "model_labels": [], "prompt": "cooked meat in container", "shelf_life_days": {"冷藏": [1, 3]}},
+    {"id": "soup", "name_zh": "汤", "name_en": "soup", "category": "熟食剩菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["汤", "剩汤"], "model_labels": [], "prompt": "soup in container", "shelf_life_days": {"冷藏": [1, 2]}},
+    {"id": "frozen_fries", "name_zh": "冷冻薯条", "name_en": "frozen french fries", "category": "冷冻速食", "storage": ["冷冻"], "default_storage": "冷冻", "default_unit": "袋", "countable": false, "aliases_zh": ["冷冻薯条", "薯条"], "model_labels": ["French-fries"], "prompt": "frozen french fries", "shelf_life_days": {"冷冻": [90, 180]}},
+    {"id": "chicken_nuggets", "name_zh": "鸡米花", "name_en": "chicken nuggets", "category": "冷冻速食", "storage": ["冷冻"], "default_storage": "冷冻", "default_unit": "袋", "countable": false, "aliases_zh": ["鸡米花", "鸡块"], "model_labels": [], "prompt": "frozen chicken nuggets", "shelf_life_days": {"冷冻": [90, 180]}},
+    {"id": "kelp", "name_zh": "海带", "name_en": "kelp", "category": "蔬菜", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "袋", "countable": false, "aliases_zh": ["海带", "海带结", "海带丝"], "model_labels": ["kelp"], "prompt": "kelp", "shelf_life_days": {"冷藏": [3, 7]}}
+  ]
+}

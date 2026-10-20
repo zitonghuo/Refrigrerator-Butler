@@ -1,0 +1,36 @@
+# ===== 运行时数据与本地环境 =====
+data/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.runtime/
+.tmp/
+.venv/
+Ultralytics/
+pytest-cache-files-*/
+*.log
+
+# ===== 模型权重与数据集（体积大，按 README 自行下载）=====
+*.pt
+vision/weights/*.pt
+!vision/weights/.gitkeep
+vision/datasets/
+vision/runs/
+vision/outputs/
+vision/.runtime/
+*.egg-info/
+
+# ===== 小程序开发者工具私有配置 =====
+miniprogram/project.private.config.json
+miniprogram/project.private.config.json.*
+
+# ===== 系统与编辑器 =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ===== 临时文件 =====
+*.tmp
+*.bak

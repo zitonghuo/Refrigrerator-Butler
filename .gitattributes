@@ -1,0 +1,32 @@
+# 统一行尾：仓库内文本一律 LF，检出时不自动改成 CRLF。
+# 这样 Windows 上 core.autocrlf=true 也不会再提示 "LF will be replaced by CRLF"。
+* text=auto eol=lf
+
+# Windows 脚本保留 CRLF，避免 cmd.exe 解析异常。
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# 二进制文件：不做行尾转换，也不做文本 diff。
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.bmp binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.zip binary
+*.7z binary
+*.gz binary
+*.mp4 binary
+*.mov binary
+*.pt binary
+*.onnx binary
+*.db binary
+*.sqlite binary
+*.pyd binary
+*.dll binary
