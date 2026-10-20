@@ -1,0 +1,30 @@
+{
+  "appId": "wx8afbc664265f1bc0",
+  "appName": "小满冰箱",
+  "version": "2.1.0",
+  "team": "冷鲜栈",
+  "contactEmail": "lzy19718010985@outlook.com",
+  "registeredOperator": "",
+  "cloudRegion": "",
+  "verified": {
+    "cloudFunctionDeployed": false,
+    "collectionsDenyClientAccess": true,
+    "realWechatLogin": false,
+    "twoWechatAccountsIsolation": false,
+    "realDeviceTest": false,
+    "privacyGuideConfigured": false,
+    "accountFilingCompleted": false,
+    "billingAlertsConfigured": false,
+    "mediaStorageRulesVerified": false,
+    "mediaLifecycleConfigured": false,
+    "mediaRealDeviceTest": false,
+    "paddleOcrDeployed": false
+  },
+  "cloudEnvironment": "cloud1-d1guygnthc98774ff",
+  "validationNotes": {
+    "date": "2026-10-20",
+    "login": "开发者工具使用当前微信身份调用真实云函数成功，尚未进行手机验证",
+    "data": "创建家庭、添加测试食材、首页回读成功",
+    "plan": "控制台显示微信体验版，正式运营套餐尚未核实"
+  }
+}

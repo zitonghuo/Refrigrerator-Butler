@@ -1,0 +1,48 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/shopping/shopping",
+    "pages/family/family",
+    "pages/profile/profile",
+    "pages/login/login",
+    "pages/onboarding/onboarding",
+    "pages/detail/detail",
+    "pages/add/add",
+    "pages/history/history",
+    "pages/privacy/privacy",
+    "pages/media/media"
+  ],
+  "window": {
+    "navigationBarTitleText": "小满冰箱",
+    "navigationBarBackgroundColor": "#f2f6fa",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f2f6fa",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#647b8b",
+    "selectedColor": "#197c80",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "我的冰箱"
+      },
+      {
+        "pagePath": "pages/shopping/shopping",
+        "text": "采购清单"
+      },
+      {
+        "pagePath": "pages/family/family",
+        "text": "我的家庭"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "个人中心"
+      }
+    ]
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

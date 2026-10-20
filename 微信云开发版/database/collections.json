@@ -1,0 +1,14 @@
+{
+  "collections": [
+    "fridge_users",
+    "fridge_homes",
+    "fridge_invites",
+    "fridge_media"
+  ],
+  "clientRules": {
+    "read": false,
+    "write": false
+  },
+  "indexes": "Only document-ID lookups are used. Default _id indexes suffice.",
+  "note": "Apply deny-all client rules to all four collections. Media storage requires separate private storage rules."
+}

@@ -1,0 +1,11 @@
+node_modules/
+**/node_modules/
+data/
+backups/
+test-results/
+**/__pycache__/
+**/project.private.config.json
+.env
+.env.*
+!.env.example
+*.log

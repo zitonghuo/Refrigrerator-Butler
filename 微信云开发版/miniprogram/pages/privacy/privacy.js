@@ -1,0 +1,2 @@
+const config=require('../../config');
+Page({data:{operator:config.operator,email:config.contactEmail,version:config.policyVersion},copy(){wx.setClipboardData({data:config.contactEmail})},official(){wx.openPrivacyContract({fail:()=>wx.showToast({title:'平台隐私指引尚未配置',icon:'none'})})}});

@@ -1,0 +1,1 @@
+{"desc": "家庭数据页面不开放搜索索引", "rules": [{"action": "disallow", "page": "*"}]}

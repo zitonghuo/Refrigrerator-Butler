@@ -1,0 +1,41 @@
+<view class="wrap">
+  <view class="title">把食材拍下来</view>
+  <view class="sub">拍包装查文字，拍视频留记录。照片最多 4 MB；视频最多 30 秒、12 MB。</view>
+  <view class="notice detail">家庭成员可查看附件。当前附件保留 30 天；重要资料请自行留存。识别结果需人工核对，不会自动判断食材是否安全。</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <button wx:if="{{error}}" class="secondary" bindtap="refresh" disabled="{{busy}}">刷新附件</button>
+  <view class="row">
+    <button class="field" data-kind="image" bindtap="capture" disabled="{{busy || loading}}">拍照 / 选照片</button>
+    <button class="field secondary" data-kind="video" bindtap="capture" disabled="{{busy || loading}}">录像 / 选视频</button>
+  </view>
+  <view wx:if="{{local}}" class="panel">
+    <image wx:if="{{local.kind==='image'}}" src="{{local.path}}" mode="widthFix" class="media-image"/>
+    <video wx:else src="{{local.path}}" controls class="media-video"/>
+    <button bindtap="upload" loading="{{busy}}" disabled="{{busy}}">上传并保存</button>
+  </view>
+  <view class="detail">{{status}}</view>
+  <view wx:if="{{preview}}" class="panel">
+    <image wx:if="{{preview.kind==='image'}}" src="{{preview.url}}" mode="widthFix" class="media-image" binderror="previewError"/>
+    <video wx:else src="{{preview.url}}" controls class="media-video" binderror="previewError"/>
+  </view>
+  <view wx:if="{{suggestion}}" class="panel">
+    <view class="section-title">核对识别结果</view>
+    <view class="label">食材名称</view><input value="{{suggestion.name}}" data-field="name" bindinput="field" maxlength="80"/>
+    <view class="detail">生产日期：{{suggestion.production || '未明确识别'}}；保质期：{{suggestion.shelfLife || '未明确识别'}}。</view>
+    <view class="label">到期日期（YYYY-MM-DD，可留空）</view><input value="{{suggestion.expiry}}" data-field="expiry" bindinput="field" maxlength="10"/>
+    <view class="detail">不会用生产日期冒充到期日期，也不会自动推算未明确标注的有效期。</view>
+    <text selectable class="ocr-text">{{suggestion.text}}</text>
+    <checkbox-group bindchange="agreement"><label><checkbox value="checked" checked="{{confirmed}}"/>我已对照包装核对</label></checkbox-group>
+    <button bindtap="use" disabled="{{busy || !confirmed}}">带入入库表单</button>
+  </view>
+  <view class="section-title">{{itemId?'这份食材的附件':'家庭照片与视频'}}</view>
+  <view wx:for="{{items}}" wx:key="id" class="panel">
+    <view class="name">{{item.kind==='image'?'照片':'视频'}} · {{index+1}}</view>
+    <view class="row">
+      <button class="secondary field" data-id="{{item.id}}" bindtap="view" disabled="{{busy}}">查看</button>
+      <button wx:if="{{item.kind==='image'}}" class="secondary field" data-id="{{item.id}}" bindtap="recognize" disabled="{{busy}}">识别包装</button>
+      <button class="text-button danger" data-id="{{item.id}}" bindtap="remove" disabled="{{busy}}">删除</button>
+    </view>
+  </view>
+  <view wx:if="{{!items.length && !loading}}" class="detail">暂无已保存附件。可以先拍照或录一段视频。</view>
+</view>

@@ -1,0 +1,4 @@
+{
+  "read": false,
+  "write": "auth != null && /^staging\\//.test(resource.path) && resource.openid == auth.openid && resource.size <= 12582912"
+}
