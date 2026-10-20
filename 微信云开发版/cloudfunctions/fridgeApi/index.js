@@ -38,6 +38,22 @@ const media = createMedia({
     const value = JSON.parse(body);
     if (!Array.isArray(value.lines)) throw Error('OCR_RESPONSE_INVALID');
     return { lines: value.lines.filter(x => typeof x === 'string').slice(0, 80).map(x => x.slice(0, 200)) };
+  } : null,
+  // Optional food detector (YOLOv8 service). Keep it server-side: the token never reaches the client.
+  vision: process.env.VISION_URL && process.env.VISION_TOKEN ? async image => {
+    const url = new URL(process.env.VISION_URL);
+    if (url.protocol !== 'https:') throw Error('VISION_HTTPS_REQUIRED');
+    const response = await fetch(url, {
+      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(45000),
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + process.env.VISION_TOKEN },
+      body: JSON.stringify({ kind: 'photo', images: [image.toString('base64')] })
+    });
+    if (!response.ok) throw Error('VISION_UNAVAILABLE');
+    const body = await response.text();
+    if (body.length > 32000) throw Error('VISION_RESPONSE_LIMIT');
+    const value = JSON.parse(body);
+    if (!Array.isArray(value.candidates)) throw Error('VISION_RESPONSE_INVALID');
+    return { candidates: value.candidates };
   } : null
 });
 exports.main = async event => {

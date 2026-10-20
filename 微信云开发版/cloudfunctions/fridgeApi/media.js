@@ -4,14 +4,41 @@ const hash = s => crypto.createHash('sha256').update(s).digest('hex');
 const fault = (code, message) => Object.assign(new Error(message), { code, public: true });
 const demand = (ok, message) => { if (!ok) throw fault('INVALID', message); };
 const LIMITS = { image: 4 * 1024 * 1024, video: 12 * 1024 * 1024 };
+const LOCATIONS = ['冷藏', '冷冻', '常温'];
 function validFile(buffer, kind) {
   if (!Buffer.isBuffer(buffer) || buffer.length > LIMITS[kind] || buffer.length < 12) return false;
   if (kind === 'video') return buffer.toString('ascii', 4, 8) === 'ftyp';
   return buffer.subarray(0, 3).equals(Buffer.from([255, 216, 255])) ||
     buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
 }
+function validDay(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  const stamp = new Date(value + 'T00:00:00Z');
+  return !Number.isNaN(stamp.getTime()) && stamp.toISOString().slice(0, 10) === value ? value : '';
+}
+// The recognition service is external input: keep known fields only and clamp them.
+function sanitizeCandidates(value) {
+  if (!Array.isArray(value)) throw fault('VISION_RESPONSE_INVALID', '识别服务返回格式不正确，请稍后重试');
+  const result = [];
+  for (const raw of value.slice(0, 40)) {
+    if (result.length >= 20) break;
+    if (!raw || typeof raw !== 'object') continue;
+    const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 80) : '';
+    if (!name) continue;
+    const unit = typeof raw.unit === 'string' && raw.unit.trim() ? raw.unit.trim().slice(0, 12) : '个';
+    const location = LOCATIONS.includes(raw.location) ? raw.location : '冷藏';
+    const expiry = validDay(raw.expiry);
+    const quantity = typeof raw.quantity === 'number' && Number.isFinite(raw.quantity) && raw.quantity > 0 && raw.quantity <= 1000000
+      ? Math.round(raw.quantity * 1e6) / 1e6 : null;
+    const confidence = typeof raw.confidence === 'number' && Number.isFinite(raw.confidence) && raw.confidence >= 0 && raw.confidence <= 1
+      ? Math.round(raw.confidence * 10000) / 10000 : null;
+    result.push({ name, quantity, unit, location, expiry, source: expiry ? 'label' : 'manual', confidence });
+  }
+  return result;
+}
 exports.validFile = validFile;
-exports.createMedia = ({ store, service, storage, env, enabled, ocr, clock = Date.now }) => async (event, identity) => {
+exports.sanitizeCandidates = sanitizeCandidates;
+exports.createMedia = ({ store, service, storage, env, enabled, ocr, vision, clock = Date.now }) => async (event, identity) => {
   try {
     if (!enabled) throw fault('MEDIA_SETUP', '照片和视频云服务正在配置，请稍后使用；手动入库不受影响。');
     const auth = await service({ action: 'session' }, identity);
@@ -117,6 +144,27 @@ exports.createMedia = ({ store, service, storage, env, enabled, ocr, clock = Dat
         output = await ocr(await storage.download(record.fileID));
         await transaction((tx, home) => find(tx, home)); // Recheck after slow inference.
       }
+    } else if (event.action === 'media.recognize') {
+      // Food detection from a fridge photo. Results are suggestions only: nothing is written to inventory here.
+      if (!vision) throw fault('VISION_SETUP', '照片识别服务尚未部署，可以先手动填写，或使用包装文字识别。');
+      const record = await transaction(async (tx, home) => {
+        const r = await find(tx, home);
+        demand(r.kind === 'image', '请选择照片进行食材识别');
+        demand(r.state === 'ready', '附件尚未完成上传');
+        // Limit expensive inference independently of the ordinary API rate limit.
+        demand(!r.lastVisionAt || now - r.lastVisionAt >= 60000, '请间隔一分钟再识别这张照片');
+        r.lastVisionAt = now; await tx.put('fridge_media', r.id, r);
+        return r;
+      });
+      let candidates;
+      try {
+        candidates = sanitizeCandidates((await vision(await storage.download(record.fileID))).candidates);
+      } catch (error) {
+        if (error.public) throw error;
+        throw fault('VISION_FAILED', '照片识别服务暂时不可用，请稍后重试或手动填写。');
+      }
+      await transaction((tx, home) => find(tx, home)); // Recheck membership after slow inference.
+      output = { candidates };
     } else throw fault('NOT_FOUND', '附件接口不存在');
     return { ok: true, data: output };
   } catch (error) {

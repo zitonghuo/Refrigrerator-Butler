@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let token=localStorage.getItem('fridge-token'), state, page='inventory', filter='全部', search='', authMode='create', candidates=[], submitKey='', taskTimer;
-const labels={expired:'已过期',urgent:'24 小时内',soon:'3 天内',week:'7 天内',fresh:'安心存放',unknown:'待补日期'}, sources={manual:'手动填写',label:'标签读取',estimate:'估算日期'};
+const labels={expired:'已过期',urgent:'今天到期',soon:'3 天内',week:'7 天内',fresh:'安心存放',unknown:'待补日期'}, sources={manual:'手动填写',label:'标签读取',estimate:'估算日期'};
 const emoji=n=>/奶|酸奶/.test(n)?'🥛':/蛋/.test(n)?'🥚':/番茄|西红柿/.test(n)?'🍅':/肉|鸡胸/.test(n)?'🥩':/菜|西兰花/.test(n)?'🥦':/苹果/.test(n)?'🍎':/香蕉/.test(n)?'🍌':/米|麦/.test(n)?'🌾':'🥬';
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',3500)}
 async function api(path,data){const r=await fetch('/api/'+path,{method:data?'POST':'GET',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(token||'')},body:data?JSON.stringify(data):undefined});const j=await r.json();if(!r.ok){if(r.status===401){localStorage.removeItem('fridge-token');token=null;auth()}throw Error(j.error||'请求失败')}return j}

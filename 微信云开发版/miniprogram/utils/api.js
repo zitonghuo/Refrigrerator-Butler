@@ -1,5 +1,5 @@
 const config = require('../config');
-const labels = { expired: '已过期', urgent: '24 小时内', soon: '3 天内', week: '7 天内', fresh: '7 天以上', unknown: '日期待补' };
+const labels = { expired: '已过期', urgent: '今天到期', soon: '3 天内', week: '7 天内', fresh: '7 天以上', unknown: '日期待补' };
 function fail(code, message) { const error = new Error(message); error.code = code; return error; }
 async function call(action, data = {}, key) {
   if (!config.cloudEnv) throw fail('NOT_CONFIGURED', '云服务尚未部署，请开发者先配置云环境。');

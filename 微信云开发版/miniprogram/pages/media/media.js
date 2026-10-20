@@ -3,7 +3,7 @@ const config = require('../../config');
 const parseLabel = require('../../utils/label-parser');
 const invoke = (method, options) => new Promise((resolve, reject) => wx[method]({ ...options, success: resolve, fail: reject }));
 Page({
-  data: { loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, confirmed: false, itemId: '', status: '' },
+  data: { loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
   onLoad(query) { this.setData({ itemId: query.itemId || '' }); },
   onShow() { this.refresh(); },
   onHide() { this.setData({ preview: null }); },
@@ -54,10 +54,38 @@ Page({
   recognize(e) {
     return api.run(this, async () => {
       const id = e.currentTarget.dataset.id;
-      this.setData({ selected: id, status: '正在识别包装文字…', suggestion: null, confirmed: false });
+      this.setData({ selected: id, status: '正在识别包装文字…', suggestion: null, foods: null, confirmed: false });
       const result = await api.call('media.ocr', { id });
       this.setData({ suggestion: parseLabel(result.lines), status: '请对照包装核对。空白或冲突字段不会自动填写。' });
     });
+  },
+  recognizeFood(e) {
+    return api.run(this, async () => {
+      const id = e.currentTarget.dataset.id;
+      this.setData({ selected: id, status: '正在识别画面里的食材…', suggestion: null, foods: null, confirmed: false });
+      const result = await api.call('media.recognize', { id });
+      this.setData({ foods: result.candidates, status: result.candidates.length ? '识别完成，请核对后带入入库表单。' : '没有识别到食材，可以手动填写或换一张照片。' });
+    });
+  },
+  useFoods() {
+    const auth = api.current(); if (!auth || !this.data.foods || !this.data.foods.length) return;
+    const existing = wx.getStorageSync('add-draft-v2');
+    let rows = existing && existing.uid === auth.user.id && existing.homeId === auth.user.homeId ? existing.rows : [];
+    // A photo can only be bound to the first new batch; further candidates are manual rows.
+    const photo = this.data.items.find(i => i.id === this.data.selected);
+    rows = rows.filter(row => (row.name || row.mediaId) && row.mediaId !== this.data.selected);
+    if (rows.length + this.data.foods.length > 20) { this.setData({ error: '草稿最多 20 项，请先保存已有食材。' }); return; }
+    this.data.foods.forEach((food, index) => rows.push({
+      name: food.name,
+      quantity: food.quantity ? String(food.quantity) : '1',
+      unit: food.unit,
+      location: food.location,
+      expiry: food.expiry,
+      source: food.source,
+      ...(photo && !photo.itemId && index === 0 ? { mediaId: photo.id } : {})
+    }));
+    wx.setStorageSync('add-draft-v2', { uid: auth.user.id, homeId: auth.user.homeId, rows });
+    wx.redirectTo({ url: '/pages/add/add' });
   },
   field(e) { this.setData({ ['suggestion.' + e.currentTarget.dataset.field]: e.detail.value, confirmed: false }); },
   agreement(e) { this.setData({ confirmed: e.detail.value.includes('checked') }); },

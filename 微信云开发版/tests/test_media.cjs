@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createService, POLICY } = require('../cloudfunctions/fridgeApi/service');
-const { createMedia, validFile } = require('../cloudfunctions/fridgeApi/media');
+const { createMedia, validFile, sanitizeCandidates } = require('../cloudfunctions/fridgeApi/media');
 const parseLabel = require('../miniprogram/utils/label-parser');
 class Store {
   constructor() { this.data = new Map(); this.tail = Promise.resolve(); }
@@ -18,7 +18,7 @@ class Store {
     this.tail = job.catch(() => {}); return job;
   }
 }
-async function setup() {
+async function setup(options = {}) {
   const store = new Store(); let now = Date.now(); let n = 0;
   const service = createService(store, { clock: () => now });
   const identity = who => ({ openid: who, appid: 'app' });
@@ -34,7 +34,12 @@ async function setup() {
     remove: async ids => ids.forEach(id => files.delete(id)),
     url: async id => 'https://example.invalid/signed/' + id.split('/').pop()
   };
-  const media = createMedia({ store, service, storage, enabled: true, env: 'env', clock: () => now, ocr: async () => ({ lines: ['品名：牛奶'] }) });
+  const media = createMedia({ store, service, storage, enabled: true, env: 'env', clock: () => now, ocr: async () => ({ lines: ['品名：牛奶'] }),
+    vision: options.vision === undefined ? async () => ({ candidates: [
+      { name: '苹果', quantity: 2, unit: '个', location: '冷藏', expiry: '', confidence: 0.82 },
+      { name: '', quantity: 1 },
+      { name: '牛奶', quantity: null, unit: '盒', location: '冷冻', expiry: '2026-02-30', confidence: 2 }
+    ] }) : options.vision });
   const call = (who, action, data = {}, key = now + '-' + ++n) => media({ action, data, key }, identity(who));
   const image = Buffer.from([255, 216, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 217]);
   async function upload(who) {
@@ -53,7 +58,7 @@ test('media is gated until private storage is configured', async () => {
 });
 test('cross-household media access, OCR, deletion and forged upload paths are rejected', async () => {
   const f = await setup(); const photo = await f.upload('a');
-  for (const action of ['media.url', 'media.ocr', 'media.remove', 'media.commit']) {
+  for (const action of ['media.url', 'media.ocr', 'media.recognize', 'media.remove', 'media.commit']) {
     assert.equal((await f.call('b', action, { id: photo.id, fileID: photo.fileID })).ok, false);
   }
   assert.deepEqual((await f.call('b', 'media.list')).data.items, []);
@@ -104,4 +109,38 @@ test('OCR parser does not turn production dates or ambiguous labels into expiry'
   assert.equal(parseLabel(['到期日期：2026-02-30']).expiry, '');
   assert.equal(parseLabel(['有效期至：2026/12/20']).expiry, '2026-12-20');
   assert.equal(parseLabel(['到期日期：2026-11-01', '到期日期：2026-12-01']).expiry, '');
+});
+test('photo recognition returns sanitized suggestions and never writes inventory', async () => {
+  const f = await setup(); const photo = await f.upload('a');
+  const homeId = (await f.request('a', 'session')).data.home.id;
+  const before = f.store.data.get('fridge_homes/' + homeId).items.length;
+  const result = await f.call('a', 'media.recognize', { id: photo.id });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.equal(result.data.candidates.length, 2);
+  assert.deepEqual(result.data.candidates[0], { name: '苹果', quantity: 2, unit: '个', location: '冷藏', expiry: '', source: 'manual', confidence: 0.82 });
+  assert.deepEqual(result.data.candidates[1], { name: '牛奶', quantity: null, unit: '盒', location: '冷冻', expiry: '', source: 'manual', confidence: null });
+  assert.equal(f.store.data.get('fridge_homes/' + homeId).items.length, before);
+});
+test('recognition is rate limited per photo and needs the service to be configured', async () => {
+  const f = await setup(); const photo = await f.upload('a');
+  assert.equal((await f.call('a', 'media.recognize', { id: photo.id })).ok, true);
+  const blocked = await f.call('a', 'media.recognize', { id: photo.id });
+  assert.equal(blocked.ok, false); assert.equal(blocked.error.code, 'INVALID');
+  f.advance(61000);
+  assert.equal((await f.call('a', 'media.recognize', { id: photo.id })).ok, true);
+  const off = await setup({ vision: null }); const other = await off.upload('a');
+  const setupError = await off.call('a', 'media.recognize', { id: other.id });
+  assert.equal(setupError.ok, false); assert.equal(setupError.error.code, 'VISION_SETUP');
+});
+test('recognition service failures stay opaque to the client', async () => {
+  const f = await setup({ vision: async () => { throw Error('ECONNREFUSED 10.0.0.1'); } });
+  const photo = await f.upload('a');
+  const result = await f.call('a', 'media.recognize', { id: photo.id });
+  assert.equal(result.ok, false); assert.equal(result.error.code, 'VISION_FAILED');
+  assert.equal(result.error.message.includes('10.0.0.1'), false);
+});
+test('recognition output is clamped to the candidate contract', () => {
+  assert.deepEqual(sanitizeCandidates([{ name: ' 番茄 ', quantity: 1e9, unit: 'x'.repeat(40), location: '阳台', expiry: '2026-02-30', confidence: -1 }]),
+    [{ name: '番茄', quantity: null, unit: 'x'.repeat(12), location: '冷藏', expiry: '', source: 'manual', confidence: null }]);
+  assert.throws(() => sanitizeCandidates('nope'), /识别服务返回格式不正确/);
 });

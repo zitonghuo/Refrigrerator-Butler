@@ -28,12 +28,23 @@
     <checkbox-group bindchange="agreement"><label><checkbox value="checked" checked="{{confirmed}}"/>我已对照包装核对</label></checkbox-group>
     <button bindtap="use" disabled="{{busy || !confirmed}}">带入入库表单</button>
   </view>
+  <view wx:if="{{foods}}" class="panel">
+    <view class="section-title">画面里的食材（{{foods.length}}）</view>
+    <view wx:for="{{foods}}" wx:key="index" class="row">
+      <view class="name">{{item.name}}</view>
+      <view class="detail">{{item.quantity ? item.quantity : '数量待补'}} {{item.unit}} · {{item.location}} · {{item.expiry || '日期待补'}}<text wx:if="{{item.confidence}}"> · 置信度 {{item.confidence}}</text></view>
+    </view>
+    <view wx:if="{{!foods.length}}" class="detail">没有识别到食材，可以手动填写或换一张照片。</view>
+    <button wx:if="{{foods.length}}" bindtap="useFoods" disabled="{{busy}}">全部带入入库表单</button>
+    <view class="detail">识别结果只是建议，不会自动入库；数量和日期请核对后再保存。</view>
+  </view>
   <view class="section-title">{{itemId?'这份食材的附件':'家庭照片与视频'}}</view>
   <view wx:for="{{items}}" wx:key="id" class="panel">
     <view class="name">{{item.kind==='image'?'照片':'视频'}} · {{index+1}}</view>
     <view class="row">
       <button class="secondary field" data-id="{{item.id}}" bindtap="view" disabled="{{busy}}">查看</button>
       <button wx:if="{{item.kind==='image'}}" class="secondary field" data-id="{{item.id}}" bindtap="recognize" disabled="{{busy}}">识别包装</button>
+      <button wx:if="{{item.kind==='image'}}" class="secondary field" data-id="{{item.id}}" bindtap="recognizeFood" disabled="{{busy}}">识别食材</button>
       <button class="text-button danger" data-id="{{item.id}}" bindtap="remove" disabled="{{busy}}">删除</button>
     </view>
   </view>

@@ -7,9 +7,9 @@
   "registeredOperator": "",
   "cloudRegion": "",
   "verified": {
-    "cloudFunctionDeployed": false,
+    "cloudFunctionDeployed": true,
     "collectionsDenyClientAccess": true,
-    "realWechatLogin": false,
+    "realWechatLogin": true,
     "twoWechatAccountsIsolation": false,
     "realDeviceTest": false,
     "privacyGuideConfigured": false,
@@ -18,13 +18,17 @@
     "mediaStorageRulesVerified": false,
     "mediaLifecycleConfigured": false,
     "mediaRealDeviceTest": false,
-    "paddleOcrDeployed": false
+    "paddleOcrDeployed": false,
+    "visionServiceDeployed": false,
+    "visionRealDeviceTest": false
   },
   "cloudEnvironment": "cloud1-d1guygnthc98774ff",
   "validationNotes": {
     "date": "2026-10-20",
     "login": "开发者工具使用当前微信身份调用真实云函数成功，尚未进行手机验证",
     "data": "创建家庭、添加测试食材、首页回读成功",
-    "plan": "控制台显示微信体验版，正式运营套餐尚未核实"
+    "plan": "控制台显示微信体验版，正式运营套餐尚未核实",
+    "vision": "云函数已支持 VISION_URL/VISION_TOKEN 调用外部食材检测服务，返回候选清单供人工确认；服务未部署，未做真机验证",
+    "deployment": "fridgeApi 已由 CLI 上传部署成功；集合权限为禁止客户端直接读写"
   }
 }

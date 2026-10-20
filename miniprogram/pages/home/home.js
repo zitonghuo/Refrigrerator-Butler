@@ -1,4 +1,4 @@
-const labels={expired:'已过期',urgent:'24 小时内',soon:'3 天内',week:'7 天内',fresh:'安心存放',unknown:'待补日期'};
+const labels={expired:'已过期',urgent:'今天到期',soon:'3 天内',week:'7 天内',fresh:'安心存放',unknown:'待补日期'};
 const sourceLabels={manual:'手动填写',label:'标签读取',estimate:'估算日期'};
 const blank=()=>({name:'',quantity:'1',unit:'个',location:'冷藏',expiry:'',source:'manual'});
 Page({
