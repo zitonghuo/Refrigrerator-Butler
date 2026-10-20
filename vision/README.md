@@ -29,6 +29,32 @@ datasets/fruits_vegetables_lvis_eval_v1/
 It contains 180 manually labeled images and 2,725 object boxes. See
 `datasets/README.md` for source, license, validation and baseline results.
 
+## Datasets and Training Artifacts Are Not in the Repository
+
+To keep the Git repository small, `datasets/` (about 5 GB) and `runs/` (about
+240 MB) are stored outside the project:
+
+```text
+E:\fridge-keeper-datasets\
+  datasets\
+  runs\
+```
+
+The scripts in `scripts/` still expect `datasets/` relative to this directory.
+Restore it when you need to evaluate or retrain:
+
+```powershell
+# 直接移回（推荐，同盘瞬时完成）
+Move-Item E:\fridge-keeper-datasets\datasets .\datasets
+
+# 或者建目录联接，不占用仓库空间
+New-Item -ItemType Junction -Path .\datasets -Target E:\fridge-keeper-datasets\datasets
+```
+
+Model weights (`weights/*.pt`, about 520 MB) are also excluded from Git; download
+them with `scripts/download_weights.py` or keep a local copy. The API service
+needs `weights/yolov8s.pt` to start.
+
 ## Improved Model
 
 The specialized produce detector is:
