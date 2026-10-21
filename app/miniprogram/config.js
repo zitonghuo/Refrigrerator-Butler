@@ -4,6 +4,7 @@ module.exports = {
   appId: 'wx8afbc664265f1bc0',
   cloudEnv: 'cloud1-d1guygnthc98774ff',
   functionName: 'fridgeApi',
+  mediaCloudEnabled: false,
   policyVersion: '2026-10-20-media',
   operator: '冷鲜栈',
   contactEmail: 'lzy19718010985@outlook.com'

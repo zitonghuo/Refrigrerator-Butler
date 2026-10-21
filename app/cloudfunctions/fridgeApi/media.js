@@ -59,7 +59,7 @@ exports.createMedia = ({ store, service, storage, env, enabled, ocr, vision, clo
     async function find(tx, home) {
       demand(typeof data.id === 'string' && /^[a-f0-9]{64}$/.test(data.id), '附件编号无效');
       const record = await tx.get('fridge_media', data.id);
-      if (!record || record.homeId !== home.id || record.expiresAt <= now || record.state === 'deleted') throw fault('NOT_FOUND', '附件不存在或已过期');
+      if (!record || record.homeId !== home.id || record.expiresAt <= clock() || record.state === 'deleted') throw fault('NOT_FOUND', '附件不存在或已过期');
       return record;
     }
     const publicRecord = r => ({ id: r.id, kind: r.kind, itemId: r.itemId, expiresAt: r.expiresAt, size: r.size });

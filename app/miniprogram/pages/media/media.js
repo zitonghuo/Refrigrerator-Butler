@@ -3,12 +3,19 @@ const config = require('../../config');
 const parseLabel = require('../../utils/label-parser');
 const invoke = (method, options) => new Promise((resolve, reject) => wx[method]({ ...options, success: resolve, fail: reject }));
 Page({
-  data: { loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
+  data: { cloudEnabled: config.mediaCloudEnabled === true, loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
   onLoad(query) { this.setData({ itemId: query.itemId || '' }); },
   onShow() { this.refresh(); },
   onHide() { this.setData({ preview: null }); },
   onPullDownRefresh() { this.refresh(); },
-  refresh() { return api.load(this, () => this.fetch()); },
+  refresh() {
+    if (!this.data.cloudEnabled) {
+      this.setData({ loading: false, error: '', items: [] });
+      wx.stopPullDownRefresh();
+      return;
+    }
+    return api.load(this, () => this.fetch());
+  },
   async fetch() { const result = await api.call('media.list', { itemId: this.data.itemId }); this.setData({ items: result.items }); },
   capture(e) {
     const kind = e.currentTarget.dataset.kind;
@@ -19,14 +26,26 @@ Page({
         const f = result.tempFiles[0];
         if (!f || f.size > (kind === 'image' ? 4 : 12) * 1024 * 1024 || (kind === 'video' && f.duration > 30.5)) throw Error('照片最多 4 MB；视频最多 30 秒、12 MB，请缩短或压缩后选择。');
         this.uploadTask = null;
-        this.setData({ local: { path: f.tempFilePath, size: f.size, kind }, preview: null, suggestion: null, selected: '', status: '已选择，点击上传保存。' });
+        this.setData({ local: { path: f.tempFilePath, size: f.size, kind }, preview: null, suggestion: null, selected: '', status: this.data.cloudEnabled ? '已选择，点击上传保存。' : '已选好，可以在此查看。当前为临时预览，不会上传或自动保存。' });
       } catch (error) {
         if (/cancel/.test(error.errMsg || '')) return;
         throw Error(error.message || '无法使用相机或相册，请检查微信权限后重试。');
       }
     });
   },
+  clearLocal() {
+    if (this.data.busy) return;
+    this.uploadTask = null;
+    this.setData({ local: null, error: '', status: '' });
+  },
+  previewLocal() {
+    const local = this.data.local;
+    if (local && local.kind === 'image') wx.previewImage({ current: local.path, urls: [local.path] });
+  },
+  localError() { this.setData({ error: '这份临时文件无法预览，请重新拍摄或选择。' }); },
+  manual() { wx.navigateTo({ url: '/pages/add/add' }); },
   upload() {
+    if (!this.data.cloudEnabled) return;
     return api.run(this, async () => {
       const local = this.data.local; if (!local) return;
       // Keep one prepare key and fileID for retries in this page. Never re-upload after commit ambiguity.
@@ -52,6 +71,7 @@ Page({
   },
   previewError() { this.setData({ preview: null, error: '预览链接可能已过期，请重新点击查看。' }); },
   recognize(e) {
+    if (!this.data.cloudEnabled) return;
     return api.run(this, async () => {
       const id = e.currentTarget.dataset.id;
       this.setData({ selected: id, status: '正在识别包装文字…', suggestion: null, foods: null, confirmed: false });
@@ -60,6 +80,7 @@ Page({
     });
   },
   recognizeFood(e) {
+    if (!this.data.cloudEnabled) return;
     return api.run(this, async () => {
       const id = e.currentTarget.dataset.id;
       this.setData({ selected: id, status: '正在识别画面里的食材…', suggestion: null, foods: null, confirmed: false });

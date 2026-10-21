@@ -1,17 +1,20 @@
 <view class="wrap">
   <view class="title">把食材拍下来</view>
-  <view class="sub">拍包装查文字，拍视频留记录。照片最多 4 MB；视频最多 30 秒、12 MB。</view>
-  <view class="notice detail">家庭成员可查看附件。当前附件保留 30 天；重要资料请自行留存。识别结果需人工核对，不会自动判断食材是否安全。</view>
+  <view class="sub">拍照看看包装，录像看看冰箱。照片最多 4 MB；视频最多 30 秒、12 MB。</view>
+  <view wx:if="{{!cloudEnabled}}" class="notice detail">本地预览模式：仅在当前页面查看，不上传、不与家人共享，也不自动保存到相册。退出页面后临时预览不保留。包装文字识别暂未启用，食材信息请手动填写。</view>
+  <view wx:else class="notice detail">家庭成员可查看附件。当前附件保留 30 天；重要资料请自行留存。识别结果需人工核对，不会自动判断食材是否安全。</view>
   <view wx:if="{{error}}" class="error">{{error}}</view>
-  <button wx:if="{{error}}" class="secondary" bindtap="refresh" disabled="{{busy}}">刷新附件</button>
+  <button wx:if="{{error && cloudEnabled}}" class="secondary" bindtap="refresh" disabled="{{busy}}">刷新附件</button>
   <view class="row">
     <button class="field" data-kind="image" bindtap="capture" disabled="{{busy || loading}}">拍照 / 选照片</button>
     <button class="field secondary" data-kind="video" bindtap="capture" disabled="{{busy || loading}}">录像 / 选视频</button>
   </view>
   <view wx:if="{{local}}" class="panel">
-    <image wx:if="{{local.kind==='image'}}" src="{{local.path}}" mode="widthFix" class="media-image"/>
-    <video wx:else src="{{local.path}}" controls class="media-video"/>
-    <button bindtap="upload" loading="{{busy}}" disabled="{{busy}}">上传并保存</button>
+    <image wx:if="{{local.kind==='image'}}" src="{{local.path}}" mode="widthFix" class="media-image" bindtap="previewLocal" binderror="localError"/>
+    <video wx:else src="{{local.path}}" controls class="media-video" binderror="localError"/>
+    <view wx:if="{{local.kind==='image'}}" class="detail">点击照片可放大查看。</view>
+    <button wx:if="{{cloudEnabled}}" bindtap="upload" loading="{{busy}}" disabled="{{busy}}">上传并保存</button>
+    <button class="secondary" bindtap="clearLocal" disabled="{{busy}}">清除本次预览</button>
   </view>
   <view class="detail">{{status}}</view>
   <view wx:if="{{preview}}" class="panel">
@@ -38,7 +41,8 @@
     <button wx:if="{{foods.length}}" bindtap="useFoods" disabled="{{busy}}">全部带入入库表单</button>
     <view class="detail">识别结果只是建议，不会自动入库；数量和日期请核对后再保存。</view>
   </view>
-  <view class="section-title">{{itemId?'这份食材的附件':'家庭照片与视频'}}</view>
+  <button wx:if="{{!cloudEnabled}}" class="secondary" bindtap="manual" disabled="{{busy}}">手动添加食材</button>
+  <view wx:if="{{cloudEnabled}}" class="section-title">{{itemId?'这份食材的附件':'家庭照片与视频'}}</view>
   <view wx:for="{{items}}" wx:key="id" class="panel">
     <view class="name">{{item.kind==='image'?'照片':'视频'}} · {{index+1}}</view>
     <view class="row">
@@ -48,5 +52,5 @@
       <button class="text-button danger" data-id="{{item.id}}" bindtap="remove" disabled="{{busy}}">删除</button>
     </view>
   </view>
-  <view wx:if="{{!items.length && !loading}}" class="detail">暂无已保存附件。可以先拍照或录一段视频。</view>
+  <view wx:if="{{cloudEnabled && !items.length && !loading}}" class="detail">暂无已保存附件。可以先拍照或录一段视频。</view>
 </view>
