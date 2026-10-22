@@ -1,8 +1,9 @@
 'use strict';
 const crypto = require('node:crypto');
+const { band, recordStats, summarize, recipeList, todoList } = require('./insights');
 const POLICY = '2026-10-20-media';
 const COLLECTIONS = { users: 'fridge_users', homes: 'fridge_homes', invites: 'fridge_invites' };
-const READS = new Set(['session', 'snapshot', 'item.get']);
+const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list']);
 const ACTIONS = new Set([...READS, 'login', 'profile.update', 'home.create', 'home.join', 'home.leave', 'home.rotate', 'home.removeMember', 'home.transfer', 'item.add', 'item.update', 'item.change', 'shopping.add', 'shopping.set', 'shopping.remove', 'account.delete']);
 class Fault extends Error { constructor(code, message) { super(message); this.code = code; } }
 const check = (ok, code, message) => { if (!ok) throw new Fault(code, message); };
@@ -26,13 +27,7 @@ function fields(data) {
   check(['manual', 'label', 'estimate'].includes(data.source), 'INVALID', '日期来源不正确');
   return { name: text(data.name), unit: text(data.unit, 12), location: data.location, expiry: date(data.expiry), source: data.source };
 }
-function band(expiry, now) {
-  if (!expiry) return 'unknown';
-  const days = (Date.parse(expiry + 'T23:59:59+08:00') - now) / 86400000;
-  return days < 0 ? 'expired' : days <= 1 ? 'urgent' : days <= 3 ? 'soon' : days <= 7 ? 'week' : 'fresh';
-}
-const publicUser = user => ({ id: user.id, name: user.name, homeId: user.homeId, policyVersion: user.policyVersion });
-const publicHome = (home, uid) => ({ id: home.id, name: home.name, ownerId: home.ownerId, members: home.members, isOwner: home.ownerId === uid, invite: home.ownerId === uid ? home.invite : '', inviteExpires: home.ownerId === uid ? home.inviteExpires : 0 });
+const publicUser = user => ({ id: user.id, name: user.name, homeId: user.homeId, policyVersion: user.policyVersion });const publicHome = (home, uid) => ({ id: home.id, name: home.name, ownerId: home.ownerId, members: home.members, isOwner: home.ownerId === uid, invite: home.ownerId === uid ? home.invite : '', inviteExpires: home.ownerId === uid ? home.inviteExpires : 0 });
 function snapshot(home, user, now) {
   return { user: publicUser(user), home: publicHome(home, user.id),
     items: home.items.filter(item => item.quantity > 0).map(item => ({ ...item, band: band(item.expiry, now) })),
@@ -88,6 +83,7 @@ exports.createService = (store, options = {}) => {
         const record = (item, kind, amount) => {
           home.events.unshift({ id: random(), itemId: item.id, name: item.name, kind, quantity: amount, unit: item.unit, actorId: uid, actor: user.name, createdAt: now });
           home.events = home.events.slice(0, 200);
+          recordStats(home, item, kind, amount, now);
         };
         const invite = async () => {
           if (home.invite) await tx.remove(COLLECTIONS.invites, hash(home.invite));
@@ -97,6 +93,9 @@ exports.createService = (store, options = {}) => {
         switch (action) {
           case 'login': case 'session': output = { user: publicUser(user), home: home ? publicHome(home, uid) : null }; break;
           case 'snapshot': needHome(); output = snapshot(home, user, now); break;
+          case 'report.summary': needHome(); output = summarize(home, data, now); break;
+          case 'recipe.list': needHome(); output = recipeList(home, data, now); break;
+          case 'todo.list': needHome(); output = todoList(home, now); break;
           case 'profile.update':
             user.name = text(data.name, 24);
             if (home) { home.members.find(m => m.id === uid).name = user.name; homeChanged = true; }
