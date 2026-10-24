@@ -39,6 +39,21 @@
 - 菜谱（`recipe.list`）：8 个固定模板按在库食材匹配，排除过期批次，不是 AI 生成。
 - 每日待办（`todo.list`）：临期批次 + 未完成采购；应用内查看，不推送手机通知。
 
+## 本机模型识别（开发调试）
+
+云媒体未开启时，可以用“本地预览 + 本机模型直连”在开发者工具里验证识别：
+
+1. 启动识别服务（在仓库根目录）：
+   ```powershell
+   cd vision
+   .\.venv\Scripts\python.exe -m food_recognition.server --host 127.0.0.1 --port 8770 --device auto
+   ```
+2. `miniprogram/config.js` 的 `visionUrl` 默认已是 `http://127.0.0.1:8770/recognize`。
+3. 开发者工具 → 详情 → 本地设置 → 勾选“不校验合法域名、TLS 版本以及 HTTPS 证书”（工程里 `urlCheck` 已为 `false`，发布前要改回 `true`）。
+4. 首页 → 添加食材 → 拍照 / 选照片 → **用本机模型识别** → 核对候选 → 带入入库表单。
+
+真机联调：把 `visionUrl` 换成电脑局域网 IP（如 `http://192.168.1.10:8770/recognize`），服务用 `--host 0.0.0.0` 启动，并允许 Windows 防火墙放行 8770；手机与电脑需在同一 Wi-Fi。发布前清空 `visionUrl` 并把 `urlCheck` 改回 `true`。
+
 ## 开发与检查
 
 ```powershell
@@ -47,7 +62,7 @@ npm test
 npm run check:release
 ```
 
-`npm test` 运行云业务、客户端、媒体与统计/菜谱/待办测试（当前 36 项），并静态检查页面、路由和权限规则。
+`npm test` 运行云业务、客户端、媒体、统计/菜谱/待办与本机识别测试（当前 41 项），并静态检查页面、路由和权限规则。
 `check:release` 在缺少云环境、登记主体或尚未完成人工验收时会失败。这是发布门槛，不表示代码单元测试失败。
 模拟器图形测试使用明确标注的示例数据，不替代真实云环境和真机联调。
 

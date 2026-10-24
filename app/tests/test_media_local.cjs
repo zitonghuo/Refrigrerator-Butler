@@ -21,7 +21,7 @@ function setup(result) {
   };
   vm.runInNewContext(fs.readFileSync(require.resolve('../miniprogram/pages/media/media.js'), 'utf8'), {
     wx, Page: p => { page = p; },
-    require: p => p.endsWith('/api') ? api : p.endsWith('/config') ? { mediaCloudEnabled: false } : () => ({})
+    require: p => p.endsWith('/api') ? api : p.endsWith('/config') ? { mediaCloudEnabled: false } : p.endsWith('/vision') ? { enabled: () => false, recognize: async () => [] } : () => ({})
   });
   page.setData = patch => Object.assign(page.data, patch);
   return { page, cloudCalls: () => cloudCalls, options: () => options, preview: () => preview };

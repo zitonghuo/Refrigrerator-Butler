@@ -11,7 +11,7 @@ for (const route of app.pages) {
   let definition;
   const source = fs.readFileSync(path.join(mini, route + '.js'), 'utf8');
   new vm.Script(source, { filename: route });
-  vm.runInNewContext(source, { Page: value => { definition = value; }, require: p => p.endsWith('config') ? config : {}, wx: {} });
+  vm.runInNewContext(source, { Page: value => { definition = value; }, require: p => p.endsWith('config') ? config : p.includes('utils/vision') ? { enabled: () => false } : {}, wx: {} });
   const wxml = fs.readFileSync(path.join(mini, route + '.wxml'), 'utf8');
   for (const [, method] of wxml.matchAll(/bind(?:tap|input|change)="([\w]+)"/g)) if (typeof definition[method] !== 'function') failures.push(route + ': missing handler ' + method);
   for (const match of source.matchAll(/\/pages\/[a-z]+\/[a-z]+/g)) if (!app.pages.includes(match[0].slice(1))) failures.push('Unknown route ' + match[0]);
@@ -20,7 +20,9 @@ for (const item of app.tabBar.list) if (!app.pages.includes(item.pagePath)) fail
 const rules = JSON.parse(fs.readFileSync(path.join(root, 'database/security-rules.json')));
 if (rules.read !== false || rules.write !== false) failures.push('Database rules must deny direct client access');
 const project = JSON.parse(fs.readFileSync(path.join(root, 'project.config.json')));
-if (project.appid !== config.appId || !project.setting.urlCheck) failures.push('Invalid production project config');
+if (project.appid !== config.appId) failures.push('Invalid production project config');
+if (process.argv.includes('--release') && !project.setting.urlCheck) failures.push('Re-enable request domain checking (urlCheck) before release');
+if (process.argv.includes('--release') && config.visionUrl) failures.push('Remove the development visionUrl from config.js before release');
 if (process.argv.includes('--release')) {
   const release = JSON.parse(fs.readFileSync(path.join(root, 'release.json')));
   if (!config.cloudEnv || /placeholder|待填写|your-/i.test(config.cloudEnv)) failures.push('Cloud environment ID is not configured');

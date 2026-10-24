@@ -1,9 +1,10 @@
 const api = require('../../utils/api');
 const config = require('../../config');
 const parseLabel = require('../../utils/label-parser');
+const vision = require('../../utils/vision');
 const invoke = (method, options) => new Promise((resolve, reject) => wx[method]({ ...options, success: resolve, fail: reject }));
 Page({
-  data: { cloudEnabled: config.mediaCloudEnabled === true, loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
+  data: { cloudEnabled: config.mediaCloudEnabled === true, visionEnabled: vision.enabled(), loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
   onLoad(query) { this.setData({ itemId: query.itemId || '' }); },
   onShow() { this.refresh(); },
   onHide() { this.setData({ preview: null }); },
@@ -86,6 +87,15 @@ Page({
       this.setData({ selected: id, status: '正在识别画面里的食材…', suggestion: null, foods: null, confirmed: false });
       const result = await api.call('media.recognize', { id });
       this.setData({ foods: result.candidates, status: result.candidates.length ? '识别完成，请核对后带入入库表单。' : '没有识别到食材，可以手动填写或换一张照片。' });
+    });
+  },
+  recognizeLocal() {
+    const local = this.data.local;
+    if (!local || local.kind !== 'image' || !this.data.visionEnabled) return;
+    return api.run(this, async () => {
+      this.setData({ status: '正在用本机模型识别…', foods: null, suggestion: null, confirmed: false });
+      const foods = await vision.recognize(local.path);
+      this.setData({ foods, status: foods.length ? '识别完成，请核对后带入入库表单。' : '没有识别到食材，可以手动填写或换一张照片。' });
     });
   },
   useFoods() {

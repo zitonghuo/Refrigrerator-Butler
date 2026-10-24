@@ -1,7 +1,7 @@
 <view class="wrap">
   <view class="title">把食材拍下来</view>
   <view class="sub">拍照看看包装，录像看看冰箱。照片最多 4 MB；视频最多 30 秒、12 MB。</view>
-  <view wx:if="{{!cloudEnabled}}" class="notice detail">本地预览模式：仅在当前页面查看，不上传、不与家人共享，也不自动保存到相册。退出页面后临时预览不保留。包装文字识别暂未启用，食材信息请手动填写。</view>
+  <view wx:if="{{!cloudEnabled}}" class="notice detail">本地预览模式：不上传、不与家人共享、不自动保存到相册。可点下方“用本机模型识别”试识别食材（需电脑上的识别服务已启动），结果需核对后带入入库表单。</view>
   <view wx:else class="notice detail">家庭成员可查看附件。当前附件保留 30 天；重要资料请自行留存。识别结果需人工核对，不会自动判断食材是否安全。</view>
   <view wx:if="{{error}}" class="error">{{error}}</view>
   <button wx:if="{{error && cloudEnabled}}" class="secondary" bindtap="refresh" disabled="{{busy}}">刷新附件</button>
@@ -14,6 +14,8 @@
     <video wx:else src="{{local.path}}" controls class="media-video" binderror="localError"/>
     <view wx:if="{{local.kind==='image'}}" class="detail">点击照片可放大查看。</view>
     <button wx:if="{{cloudEnabled}}" bindtap="upload" loading="{{busy}}" disabled="{{busy}}">上传并保存</button>
+    <button wx:if="{{!cloudEnabled && visionEnabled}}" bindtap="recognizeLocal" loading="{{busy}}" disabled="{{busy}}">用本机模型识别</button>
+    <view wx:if="{{!cloudEnabled && !visionEnabled}}" class="detail">本机识别未配置：在 config.js 填写 visionUrl 后可用。</view>
     <button class="secondary" bindtap="clearLocal" disabled="{{busy}}">清除本次预览</button>
   </view>
   <view class="detail">{{status}}</view>
