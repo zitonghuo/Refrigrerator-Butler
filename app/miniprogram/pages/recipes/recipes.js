@@ -1,0 +1,5 @@
+const api=require('../../utils/api');
+Page({data:{loading:false,busy:false,error:'',servings:2,options:[1,2,3,4,5,6],recipes:[],note:''},onShow(){this.refresh()},onPullDownRefresh(){this.refresh()},
+refresh(){return api.load(this,async()=>{const s=await api.call('recipe.list',{servings:this.data.servings});this.setData({recipes:s.recipes.map(r=>({...r,matchedText:r.matched.join('、')||'暂无',missingText:r.missing.join('、')||'无需补充'})),note:s.note})})},
+servings(e){if(this.data.loading||this.data.busy)return;this.setData({servings:this.data.options[Number(e.detail.value)]});this.refresh()},
+buy(e){const recipe=this.data.recipes.find(r=>r.id===e.currentTarget.dataset.id);if(!recipe)return;wx.showModal({title:'加入采购清单',content:'添加缺少的食材：'+recipe.missingText,success:r=>{if(r.confirm)api.run(this,async()=>{const s=await api.call('snapshot');const names=new Set(s.shopping.filter(i=>!i.done).map(i=>i.name));for(const name of recipe.missing){if(!names.has(name)){await api.write('shopping.add',{name});names.add(name)}}wx.showToast({title:'已加入采购清单'})})}})} });

@@ -1,10 +1,11 @@
 'use strict';
 const crypto = require('node:crypto');
 const { band, recordStats, summarize, recipeList, todoList } = require('./insights');
-const POLICY = '2026-10-20-media';
+const POLICY = '2026-10-27-reminders';
+const { status: reminderStatus } = require('./reminders');
 const COLLECTIONS = { users: 'fridge_users', homes: 'fridge_homes', invites: 'fridge_invites' };
-const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list']);
-const ACTIONS = new Set([...READS, 'login', 'profile.update', 'home.create', 'home.join', 'home.leave', 'home.rotate', 'home.removeMember', 'home.transfer', 'item.add', 'item.update', 'item.change', 'shopping.add', 'shopping.set', 'shopping.remove', 'account.delete']);
+const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list', 'reminder.status']);
+const ACTIONS = new Set([...READS, 'login', 'profile.update', 'home.create', 'home.join', 'home.leave', 'home.rotate', 'home.removeMember', 'home.transfer', 'item.add', 'item.update', 'item.change', 'shopping.add', 'shopping.set', 'shopping.remove', 'account.delete', 'reminder.subscribe', 'reminder.cancel']);
 class Fault extends Error { constructor(code, message) { super(message); this.code = code; } }
 const check = (ok, code, message) => { if (!ok) throw new Fault(code, message); };
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -96,6 +97,17 @@ exports.createService = (store, options = {}) => {
           case 'report.summary': needHome(); output = summarize(home, data, now); break;
           case 'recipe.list': needHome(); output = recipeList(home, data, now); break;
           case 'todo.list': needHome(); output = todoList(home, now); break;
+          case 'reminder.status': output=reminderStatus(user,options.reminders||{},now); break;
+          case 'reminder.subscribe': {
+            needHome();const config=options.reminders||{};
+            check(config.ready,'REMINDER_SETUP','微信提醒尚未配置，请稍后再试');
+            check(data.templateId===config.templateId&&data.accepted===true,'INVALID','请先在微信弹窗中同意订阅');
+            check(!user.reminder||user.reminder.state!=='sending','CONFLICT','上一条提醒正在处理，请稍后再试');
+            const lastSentDay=user.reminder&&user.reminder.lastSentDay||'';
+            user.reminder={state:'pending',homeId:home.id,openid:identity.openid,templateId:config.templateId,createdAt:now,expiresAt:now+7*86400000,lastSentDay};
+            output=reminderStatus(user,config,now);break;
+          }
+          case 'reminder.cancel': user.reminder={state:'off',result:'cancelled',finishedAt:now,lastSentDay:user.reminder&&user.reminder.lastSentDay||''};output={ok:true};break;
           case 'profile.update':
             user.name = text(data.name, 24);
             if (home) { home.members.find(m => m.id === uid).name = user.name; homeChanged = true; }
@@ -122,7 +134,7 @@ exports.createService = (store, options = {}) => {
           case 'home.removeMember': {
             owner(); check(data.memberId !== uid && home.members.some(m => m.id === data.memberId), 'INVALID', '请选择其他家庭成员');
             const member = await tx.get(COLLECTIONS.users, data.memberId);
-            if (member && member.homeId === home.id) { member.homeId = ''; member.receipts = []; await tx.put(COLLECTIONS.users, member.id, member); }
+            if (member && member.homeId === home.id) { member.homeId = ''; delete member.reminder; member.receipts = []; await tx.put(COLLECTIONS.users, member.id, member); }
             home.members = home.members.filter(m => m.id !== data.memberId);
             home.events = home.events.map(e => e.actorId === data.memberId ? { ...e, actorId: '', actor: '已离开成员' } : e);
             await invite(); homeChanged = true; output = { ok: true }; break;
@@ -139,7 +151,7 @@ exports.createService = (store, options = {}) => {
                 homeChanged = true;
               }
             }
-            user.homeId = ''; user.receipts = [];
+            user.homeId = ''; delete user.reminder; user.receipts = [];
             if (action === 'account.delete') { await tx.remove(COLLECTIONS.users, uid); deleteUser = true; }
             output = { ok: true }; break;
           }

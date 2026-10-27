@@ -1,5 +1,5 @@
 const api=require('../../utils/api');
-Page({data:{loading:false,busy:false,error:'',home:null,items:[],visible:[],zones:[],filter:'全部',query:'',urgentOnly:false,urgent:0,expired:0,pending:0},
+Page({today(){wx.navigateTo({url:"/pages/today/today"})},recipes(){wx.navigateTo({url:"/pages/recipes/recipes"})},reports(){wx.navigateTo({url:"/pages/reports/reports"})},reminders(){wx.navigateTo({url:"/pages/reminders/reminders"})},data:{loading:false,busy:false,error:'',home:null,items:[],visible:[],zones:[],filter:'全部',query:'',urgentOnly:false,urgent:0,expired:0,pending:0},
  onShow(){this.refresh()},onPullDownRefresh(){this.refresh()},
  refresh(){return api.load(this,async()=>{const s=await api.call('snapshot');const items=s.items.map(api.decorate);
   this.setData({home:s.home,items,zones:['全部','冷藏','冷冻','常温'].map(name=>({name,count:items.filter(i=>name==='全部'||i.location===name).length})),urgent:items.filter(i=>['urgent','soon'].includes(i.band)).length,expired:items.filter(i=>i.band==='expired').length,pending:s.shopping.filter(i=>!i.done).length});this.filterItems();})},

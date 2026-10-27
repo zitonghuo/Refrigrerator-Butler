@@ -6,6 +6,9 @@ function setup(result) {
   let page; let cloudCalls = 0; let options; let preview;
   const wx = {
     stopPullDownRefresh() {},
+    showToast() {},
+    saveImageToPhotosAlbum: o => { options = o; o.success(); },
+    saveVideoToPhotosAlbum: o => { options = o; o.success(); },
     requirePrivacyAuthorize: o => o.success(),
     chooseMedia: o => { options = o; result(o); },
     previewImage: o => { preview = o; }
@@ -50,4 +53,11 @@ test('local video respects duration limits and cancellation preserves existing p
   assert.equal(cancelled.page.data.local.path, 'wxfile://previous');
   assert.equal(cancelled.page.data.error, '');
   assert.equal(cancelled.page.data.busy, false);
+});
+
+test('album saving only happens on explicit action and uses the selected file', async () => {
+ const f=setup(o=>o.success({tempFiles:[{tempFilePath:'wxfile://photo',size:100}]}));
+ await f.page.capture({currentTarget:{dataset:{kind:'image'}}});
+ assert.equal(f.options().filePath,undefined);
+ await f.page.saveLocal();assert.equal(f.options().filePath,'wxfile://photo');assert.match(f.page.data.status,/已保存到手机相册/);assert.equal(f.cloudCalls(),0);
 });

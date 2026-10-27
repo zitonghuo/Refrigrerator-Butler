@@ -10,7 +10,11 @@
     "pages/add/add",
     "pages/history/history",
     "pages/privacy/privacy",
-    "pages/media/media"
+    "pages/media/media",
+    "pages/today/today",
+    "pages/recipes/recipes",
+    "pages/reports/reports",
+    "pages/reminders/reminders"
   ],
   "window": {
     "navigationBarTitleText": "小满冰箱",

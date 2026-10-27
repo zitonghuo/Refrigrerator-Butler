@@ -52,6 +52,8 @@ test('report aggregates daily stats by unit and keeps units separate', async () 
 
   const report = await f.read('a', 'report.summary', { days: 7 });
   assert.equal(report.days, 7);
+  assert.equal(report.from,'2026-10-14');
+  assert.equal(report.to,'2026-10-20');
   assert.equal(report.source, 'stats');
   assert.equal(report.byDay.length, 1);
   assert.deepEqual(report.totals.in, { count: 2, units: { '个': 3, '盒': 2 } });
@@ -87,6 +89,7 @@ test('report falls back to retained events when a home predates daily stats', as
 
   const report = await f.read('a', 'report.summary', { days: 7 });
   assert.equal(report.source, 'events');
+  assert.deepEqual(report.byDay[0].in,{count:1,units:{'个':2}});
   assert.equal(report.partial, true);
   assert.deepEqual(report.totals.in, { count: 1, units: { '个': 2 } });
   assert.equal(report.totals.nearExpiryConsumed, null);

@@ -3,11 +3,14 @@ const cloud = require('wx-server-sdk');
 const { createService } = require('./service');
 const { createStore } = require('./store');
 const { createMedia } = require('./media');
+const {settings,createDispatcher}=require('./reminders');
+const reminderConfig=settings(process.env);
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 // A first-time user / invalid invite is a normal missing-document result.
 // SDK 4 defaults to throwing for missing documents, so opt out explicitly.
 const store = createStore(cloud.database({ throwOnNotFound: false }));
 const service = createService(store, {
+  reminders: reminderConfig,
   appId: process.env.EXPECTED_APPID || 'wx8afbc664265f1bc0'
 });
 const media = createMedia({
@@ -56,8 +59,13 @@ const media = createMedia({
     return { candidates: value.candidates };
   } : null
 });
+const dispatchReminders=createDispatcher({store,config:reminderConfig,
+  listUserIds:async after=>{const db=cloud.database();const res=await db.collection('fridge_users').where({_id:db.command.gt(after)}).orderBy('_id','asc').limit(100).get();return res.data.map(u=>u._id)},
+  send:args=>cloud.openapi.subscribeMessage.send(args)
+});
 exports.main = async event => {
   const context = cloud.getWXContext();
+  if(event&&event.Type==='Timer')return dispatchReminders(event,context);
   const identity = { openid: context.OPENID, appid: context.APPID };
   if (event && typeof event.action === 'string' && event.action.startsWith('media.')) return media(event, identity);
   return service(event, identity);

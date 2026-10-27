@@ -1,6 +1,6 @@
 const api=require('../../utils/api');
 const config=require('../../config');
-Page({data:{loading:false,busy:false,error:'',user:null,name:'',home:null,pending:false,email:config.contactEmail},onShow(){this.refresh()},onPullDownRefresh(){this.refresh()},
+Page({today(){wx.navigateTo({url:"/pages/today/today"})},recipes(){wx.navigateTo({url:"/pages/recipes/recipes"})},reports(){wx.navigateTo({url:"/pages/reports/reports"})},reminders(){wx.navigateTo({url:"/pages/reminders/reminders"})},data:{loading:false,busy:false,error:'',user:null,name:'',home:null,pending:false,email:config.contactEmail},onShow(){this.refresh()},onPullDownRefresh(){this.refresh()},
  refresh(){return api.load(this,async s=>{this.setData({user:s.user,name:s.user.name,home:s.home,pending:api.hasPending()})},false)},input(e){this.setData({name:e.detail.value})},
  save(){return api.run(this,async()=>{await api.write('profile.update',{name:this.data.name.trim()});const s=await api.call('session');api.session(s);this.setData({user:s.user});wx.showToast({title:'已保存'})})},
  recover(){return api.run(this,async()=>{const action=await api.resume();this.setData({pending:api.hasPending()});if(action==='account.delete'){api.clearLocal();wx.reLaunch({url:'/pages/login/login'})}else {await api.ensure(false);wx.showToast({title:'已核对提交'});if(action==='home.leave')wx.reLaunch({url:'/pages/onboarding/onboarding'})}})},

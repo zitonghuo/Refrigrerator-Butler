@@ -34,6 +34,10 @@ Page({
       }
     });
   },
+  saveLocal() {
+    const local=this.data.local;if(!local)return;
+    return api.run(this,async()=>{try {await invoke(local.kind==='image'?'saveImageToPhotosAlbum':'saveVideoToPhotosAlbum',{filePath:local.path});this.setData({status:'已保存到手机相册，退出页面后仍可在相册查看。'});wx.showToast({title:'已保存到相册'});}catch(e){throw Error(/auth|deny|denied/.test(e.errMsg||'')?'未获得相册保存权限，请在微信设置中允许后重试。':'保存未完成，请重试；原照片或视频不受影响。');}});
+  },
   clearLocal() {
     if (this.data.busy) return;
     this.uploadTask = null;
@@ -93,6 +97,7 @@ Page({
     const local = this.data.local;
     if (!local || local.kind !== 'image' || !this.data.visionEnabled) return;
     return api.run(this, async () => {
+      const consent=await invoke('showModal',{title:'发送照片进行识别',content:'这张照片将发送到开发者配置的本机识别服务。是否继续？',confirmText:'发送识别'});if(!consent.confirm)return;
       this.setData({ status: '正在用本机模型识别…', foods: null, suggestion: null, confirmed: false });
       const foods = await vision.recognize(local.path);
       this.setData({ foods, status: foods.length ? '识别完成，请核对后带入入库表单。' : '没有识别到食材，可以手动填写或换一张照片。' });

@@ -1,0 +1,1 @@
+.entry{padding:24rpx 0;border-bottom:2rpx solid #e0e8ef}.entry:last-child{border-bottom:0}.steps{line-height:1.9;margin-top:16rpx}.period{display:flex;gap:16rpx;margin:24rpx 0}.period button{flex:1;margin:0}.muted-block{margin-top:20rpx}

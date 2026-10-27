@@ -67,7 +67,8 @@ function normalizeDays(value) {
 // last 200 events (best effort, marked partial) so old homes still get a number.
 function summarize(home, data, now) {
   const days = normalizeDays(data && data.days);
-  const from = dayKey(now - days * DAY);
+  const from = dayKey(now - (days - 1) * DAY);
+  const start = Date.parse(from + "T00:00:00+08:00");
   const to = dayKey(now);
   const totals = emptyTotals();
   const byDay = [];
@@ -91,7 +92,7 @@ function summarize(home, data, now) {
     return {
       days, from, to,
       source: 'stats',
-      partial: Boolean(home.stats.since && home.stats.since > now - days * DAY),
+      partial: Boolean(home.stats.since && home.stats.since > start),
       totals, byDay,
       amount: null,
       amountReason: '未记录价格，无法计算金额',
@@ -102,7 +103,7 @@ function summarize(home, data, now) {
   // Fallback: derive from the retained events (max 200) for homes that predate stats.
   const byDate = new Map();
   for (const event of home.events || []) {
-    if (!event || typeof event.createdAt !== 'number' || event.createdAt < now - days * DAY) continue;
+    if (!event || typeof event.createdAt !== 'number' || event.createdAt < start || event.createdAt > now) continue;
     const bucket = WRITE_KINDS[event.kind];
     if (!bucket) continue;
     const date = dayKey(event.createdAt);
@@ -115,7 +116,7 @@ function summarize(home, data, now) {
   for (const date of [...byDate.keys()].sort()) {
     const entry = byDate.get(date);
     const row = { date };
-    for (const bucket of BUCKETS) if (entry[bucket]) addBucket(totals[bucket], entry[bucket]);
+    for (const bucket of BUCKETS) if (entry[bucket]) { row[bucket] = { count: entry[bucket].count, units: { ...entry[bucket].units } }; addBucket(totals[bucket], entry[bucket]); }
     byDay.push(row);
   }
   totals.nearExpiryConsumed = null;
