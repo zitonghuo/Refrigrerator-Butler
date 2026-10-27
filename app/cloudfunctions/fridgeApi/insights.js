@@ -131,70 +131,70 @@ function summarize(home, data, now) {
   };
 }
 
-const RECIPES = [
-  {
-    id: 'tomato-egg', name: '番茄炒蛋', minutes: 15, servings: 2,
-    needs: [{ name: '番茄', test: /番茄|西红柿/ }, { name: '鸡蛋', test: /鸡蛋|蛋/ }],
-    steps: ['番茄洗净切块，鸡蛋打散。', '先把蛋液炒至凝固盛出，再炒软番茄。', '合锅翻炒调味，确保鸡蛋完全熟透。']
-  },
-  {
-    id: 'broccoli-chicken', name: '西兰花炒鸡胸', minutes: 20, servings: 2,
-    needs: [{ name: '西兰花', test: /西兰花/ }, { name: '鸡胸肉', test: /鸡胸|鸡肉/ }],
-    steps: ['西兰花切小朵焯水，鸡胸肉切片。', '鸡肉另锅翻炒至变色。', '合锅调味，确保鸡肉中心熟透。']
-  },
-  {
-    id: 'milk-oat', name: '牛奶燕麦粥', minutes: 10, servings: 1,
-    needs: [{ name: '牛奶', test: /奶/ }, { name: '燕麦', test: /燕麦|麦片/ }],
-    steps: ['按包装说明准备燕麦和牛奶。', '小火加热并持续搅拌，避免糊底。', '煮至燕麦熟软后盛出。']
-  },
-  {
-    id: 'potato-pepper', name: '青椒土豆丝', minutes: 15, servings: 2,
-    needs: [{ name: '土豆', test: /土豆|马铃薯/ }, { name: '青椒', test: /青椒|尖椒/ }],
-    steps: ['土豆切丝后用清水冲去淀粉。', '热锅快炒土豆丝至断生。', '加入青椒丝调味，炒匀出锅。']
-  },
-  {
-    id: 'mushroom-greens', name: '蘑菇炒青菜', minutes: 12, servings: 2,
-    needs: [{ name: '蘑菇', test: /蘑菇|香菇|口蘑/ }, { name: '青菜', test: /青菜|生菜|菠菜|油菜|小白菜/ }],
-    steps: ['蘑菇切片，青菜洗净沥干。', '先炒蘑菇至出水收干。', '加入青菜大火快炒，调味出锅。']
-  },
-  {
-    id: 'carrot-egg', name: '胡萝卜炒蛋', minutes: 12, servings: 2,
-    needs: [{ name: '胡萝卜', test: /胡萝卜/ }, { name: '鸡蛋', test: /鸡蛋|蛋/ }],
-    steps: ['胡萝卜切丝，鸡蛋打散。', '先炒蛋盛出，再炒胡萝卜丝至变软。', '合锅翻炒调味，出锅。']
-  },
-  {
-    id: 'cucumber-salad', name: '凉拌黄瓜', minutes: 8, servings: 2,
-    needs: [{ name: '黄瓜', test: /黄瓜/ }],
-    steps: ['黄瓜洗净拍碎切段。', '按口味加调味料拌匀。', '冷藏十分钟后口感更好。']
-  },
-  {
-    id: 'fruit-yogurt', name: '水果酸奶杯', minutes: 5, servings: 1,
-    needs: [{ name: '酸奶', test: /酸奶/ }, { name: '水果', test: /苹果|香蕉|草莓|蓝莓|猕猴桃|葡萄|橙/ }],
-    steps: ['水果洗净切块。', '与酸奶分层装杯。', '现做现吃，避免久放。']
+const RECIPES = require('./recipes.json');
+
+function nameHit(item, terms) {
+  const names = [item.name, ...(item.names || [])].filter(Boolean).map(value => String(value).toLowerCase());
+  return terms.some(term => {
+    const target = String(term).toLowerCase();
+    if (!target) return false;
+    return names.some(name => target.length === 1 ? name === target : name.includes(target) || target.includes(name));
+  });
+}
+
+function matchRecipes(recipes, items, options = {}) {
+  const now = options.now || Date.now();
+  const exclude = (options.exclude || []).map(value => String(value).trim()).filter(Boolean).slice(0, 10);
+  const available = (items || []).filter(item => item.quantity > 0 && band(item.expiry, now) !== 'expired');
+  const disliked = value => exclude.some(term => value === term || value.includes(term) || term.includes(value));
+  const list = [];
+  for (const recipe of recipes) {
+    const main = recipe.main || [];
+    if (!main.length) continue;
+    if (main.some(need => (need.terms || [need.name]).some(disliked))) continue;
+    const matched = [];
+    const missing = [];
+    for (const need of main) {
+      const terms = need.terms && need.terms.length ? need.terms : [need.name];
+      const item = available.find(candidate => nameHit(candidate, terms));
+      if (!item) { missing.push(need.name); continue; }
+      const state = band(item.expiry, now);
+      matched.push({
+        need: need.name, itemId: item.id, name: item.name,
+        quantity: item.quantity, unit: item.unit, band: state,
+        expiring: state === 'urgent' || state === 'soon'
+      });
+    }
+    list.push({
+      id: recipe.id, name: recipe.name, category: recipe.category,
+      minutes: recipe.minutes, servings: recipe.servings,
+      calories: recipe.calories, difficulty: recipe.difficulty,
+      matched, missing, coverage: Math.round((matched.length / main.length) * 100) / 100,
+      expiring: matched.filter(entry => entry.expiring).length,
+      steps: recipe.steps, source: recipe.source, sourceUrl: recipe.sourceUrl
+    });
   }
-];
+  list.sort((a, b) => a.missing.length - b.missing.length || b.matched.length - a.matched.length ||
+    b.coverage - a.coverage || b.expiring - a.expiring || a.minutes - b.minutes || a.name.localeCompare(b.name, 'zh'));
+  const ready = list.filter(entry => entry.missing.length === 0);
+  // "Almost" must actually use something from the fridge; a 0/1 match is not almost.
+  const almost = list.filter(entry => entry.missing.length === 1 && entry.matched.length > 0);
+  const inspiration = list.filter(entry => entry.missing.length >= 2 || (entry.missing.length === 1 && entry.matched.length === 0)).slice(0, 20);
+  return {
+    ready,
+    almost,
+    inspiration,
+    recipes: list,
+    stats: { ready: ready.length, almost: almost.length, total: list.length },
+    note: '来自 HowToCook 的真实菜谱库，按库存匹配，不生成新菜名；已排除过期批次，份量仅作参考。'
+  };
+}
 
 function recipeList(home, data, now = Date.now()) {
   const servings = Number.isInteger(data && data.servings) && data.servings > 0 && data.servings <= 10 ? data.servings : 2;
-  const available = (home.items || []).filter(item => item.quantity > 0 && band(item.expiry, now) !== 'expired');
-  const list = RECIPES.map(recipe => {
-    const matched = []; const missing = [];
-    for (const need of recipe.needs) {
-      const hit = available.find(item => need.test.test(item.name));
-      if (hit) matched.push(need.name); else missing.push(need.name);
-    }
-    return {
-      id: recipe.id, name: recipe.name, minutes: recipe.minutes, servings: recipe.servings,
-      matched, missing, score: Math.round((matched.length / recipe.needs.length) * 100) / 100,
-      steps: recipe.steps
-    };
-  });
-  list.sort((a, b) => b.score - a.score || a.minutes - b.minutes);
-  return {
-    servings,
-    recipes: list,
-    note: '固定菜谱模板，不是 AI 生成；已排除过期批次，份量仅作参考、不自动换算用量。'
-  };
+  const items = (home.items || []).map(item => ({ ...item, names: [item.name, resolveAlias(home, item.name).name] }));
+  const exclude = Array.isArray(data && data.exclude) ? data.exclude.filter(value => typeof value === 'string') : [];
+  return { servings, ...matchRecipes(RECIPES, items, { now, exclude }) };
 }
 
 function todoList(home, now) {
@@ -328,6 +328,7 @@ exports.dayKey = dayKey;
 exports.recordStats = recordStats;
 exports.summarize = summarize;
 exports.recipeList = recipeList;
+exports.matchRecipes = matchRecipes;
 exports.todoList = todoList;
 exports.setAlias = setAlias;
 exports.listAliases = listAliases;
