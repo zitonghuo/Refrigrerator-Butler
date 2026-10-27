@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 const { band, recordStats, summarize, recipeList, todoList } = require('./insights');
 const POLICY = '2026-10-20-media';
 const COLLECTIONS = { users: 'fridge_users', homes: 'fridge_homes', invites: 'fridge_invites' };
-const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list']);
+const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list', 'account.export']);
 const ACTIONS = new Set([...READS, 'login', 'profile.update', 'home.create', 'home.join', 'home.leave', 'home.rotate', 'home.removeMember', 'home.transfer', 'item.add', 'item.update', 'item.change', 'shopping.add', 'shopping.set', 'shopping.remove', 'account.delete']);
 class Fault extends Error { constructor(code, message) { super(message); this.code = code; } }
 const check = (ok, code, message) => { if (!ok) throw new Fault(code, message); };
@@ -96,6 +96,24 @@ exports.createService = (store, options = {}) => {
           case 'report.summary': needHome(); output = summarize(home, data, now); break;
           case 'recipe.list': needHome(); output = recipeList(home, data, now); break;
           case 'todo.list': needHome(); output = todoList(home, now); break;
+          case 'account.export': {
+            needHome();
+            // Data portability: only this user's own household, never the invite code or OpenID.
+            output = {
+              schemaVersion: '1.0',
+              exportedAt: new Date(now).toISOString(),
+              user: { id: user.id, name: user.name },
+              home: {
+                id: home.id, name: home.name, ownerId: home.ownerId,
+                members: (home.members || []).map(member => ({ id: member.id, name: member.name }))
+              },
+              items: home.items || [],
+              shopping: home.shopping || [],
+              events: home.events || [],
+              stats: home.stats || null
+            };
+            break;
+          }
           case 'profile.update':
             user.name = text(data.name, 24);
             if (home) { home.members.find(m => m.id === uid).name = user.name; homeChanged = true; }

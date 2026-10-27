@@ -55,6 +55,7 @@ cd vision
 | [`app/docs/小满冰箱使用手册.md`](app/docs/小满冰箱使用手册.md) | 面向用户的操作说明 |
 | [`app/docs/发布与真机验收.md`](app/docs/发布与真机验收.md) | 提审前检查项 |
 | [`app/验证记录.md`](app/验证记录.md) | 云端联调与测试记录 |
+| [`app/docs/依赖审计.md`](app/docs/依赖审计.md) | wx-server-sdk 传递依赖告警的复核结论 |
 | [`SECURITY.md`](SECURITY.md) | AppID 告警说明与密钥管理 |
 | [`docs/小程序接入识别服务.md`](docs/小程序接入识别服务.md) | 为什么模型不放进小程序、如何接 |
 | [`local-demo/验收记录.md`](local-demo/验收记录.md) | 本地演示版验收记录 |
