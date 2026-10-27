@@ -13,3 +13,11 @@ test('GLM rejects no consent and invalid images before provider',async()=>{const
 test('GLM session and server switch gate image transmission',async()=>{const f=setup({env:{}});assert.equal((await f.run(f.event,{})).error.code,'VISION_SETUP');const g=setup({service:async()=>({ok:false,error:{code:'UNAUTHENTICATED'}})});assert.equal((await g.run(g.event,{})).ok,false);assert.equal(g.calls(),0);});
 test('GLM concurrent requests are rate limited atomically',async()=>{const f=setup();const r=await Promise.all([f.run(f.event,{}),f.run(f.event,{})]);assert.equal(r.filter(x=>x.ok).length,1);assert.equal(f.calls(),1);});
 test('GLM upstream errors never expose credentials and malformed JSON is rejected',async()=>{const f=setup({request:async()=>{throw Error('secret credential')}});const r=await f.run(f.event,{});assert.equal(r.error.code,'VISION_FAILED');assert.equal(JSON.stringify(r).includes('secret'),false);assert.throws(()=>parse('not JSON'));assert.deepEqual(parse('{"candidates":[]}'),[]);});
+
+test('GLM initializes and reports disabled on Node 16 without fetch or AbortSignal',async()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+ const file=path.resolve(__dirname,'../cloudfunctions/fridgeApi/glm-vision.js');
+ const mod={exports:{}};vm.runInNewContext(fs.readFileSync(file,'utf8'),{module:mod,require:require('node:module').createRequire(file),Buffer,setTimeout,clearTimeout});
+ const run=mod.exports.createVision({store:{},service:async()=>({ok:true,data:{user:{id:'u'}}})});
+ const result=await run({action:'vision.status'},{});assert.equal(result.ok,true);assert.equal(result.data.ready,false);
+});
