@@ -20,7 +20,7 @@ class MemoryStore {
 
 function setup(start = Date.parse('2026-10-27T02:00:00Z')) {
   const store = new MemoryStore(); let now = start; let serial = 0;
-  const service = createService(store, { clock: () => now });
+  const service = createService(store, { clock: () => now, logger: false });
   const call = (who, action, data = {}, key) => service({ action, data, ...(key === undefined ? {} : { key }) }, { appid: 'test-app', openid: who });
   const read = async (who, action, data = {}, key) => {
     const result = await call(who, action, data, key);

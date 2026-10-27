@@ -35,9 +35,17 @@ function snapshot(home, user, now) {
     shopping: home.shopping, events: home.events, revision: home.revision };
 }
 exports.POLICY = POLICY;
+const defaultLogger = entry => {
+  if (process.env.FRIDGE_LOG === 'off') return;
+  try { console.log(JSON.stringify(entry)); } catch { /* logging must never break a request */ }
+};
 exports.createService = (store, options = {}) => {
   const clock = options.clock || Date.now;
+  const logger = options.logger === false ? null : (options.logger || defaultLogger);
   return async (event, identity) => {
+    const started = clock();
+    const action = event && typeof event.action === 'string' ? event.action.slice(0, 40) : '';
+    let code = 'OK';
     try {
       check(identity && typeof identity.openid === 'string' && identity.openid && typeof identity.appid === 'string' && identity.appid, 'UNAUTHENTICATED', '请通过微信小程序登录');
       check(!options.appId || identity.appid === options.appId, 'FORBIDDEN', '该小程序未获准访问此服务');
@@ -260,10 +268,24 @@ exports.createService = (store, options = {}) => {
       });
       return { ok: true, data: result };
     } catch (error) {
-      if (error instanceof Fault) return { ok: false, error: { code: error.code, message: error.message } };
-      // Do not log event, OPENID, invitations or household content.
-      console.error('fridge-api failure', error.code || 'INTERNAL');
-      return { ok: false, error: { code: 'INTERNAL', message: '服务暂时不可用，请稍后重试；未确认的操作请使用原请求重试' } };
+      code = error instanceof Fault ? error.code : 'INTERNAL';
+      if (code === 'INTERNAL') {
+        // Never log the event, OPENID, invitation code or household content.
+        console.error('fridge-api failure', error.code || 'INTERNAL');
+      }
+      return {
+        ok: false,
+        error: {
+          code,
+          message: error instanceof Fault ? error.message : '服务暂时不可用，请稍后重试；未确认的操作请使用原请求重试'
+        }
+      };
+    } finally {
+      if (logger) {
+        try {
+          logger({ action, ok: code === 'OK', code, ms: Math.max(0, clock() - started), ts: new Date(clock()).toISOString() });
+        } catch { /* logging must never break a request */ }
+      }
     }
   };
 };

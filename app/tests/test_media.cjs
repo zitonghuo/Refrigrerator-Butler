@@ -20,7 +20,7 @@ class Store {
 }
 async function setup(options = {}) {
   const store = new Store(); let now = Date.now(); let n = 0;
-  const service = createService(store, { clock: () => now });
+  const service = createService(store, { clock: () => now, logger: false });
   const identity = who => ({ openid: who, appid: 'app' });
   const request = (who, action, data = {}, key = now + '-' + ++n) => service({ action, data, key }, identity(who));
   for (const who of ['a', 'b']) {

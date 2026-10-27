@@ -22,7 +22,7 @@ class MemoryStore {
 }
 function setup() {
   const store = new MemoryStore(); let now = Date.parse('2026-10-13T04:00:00Z'); let serial = 0;
-  const service = createService(store, { clock: () => now });
+  const service = createService(store, { clock: () => now, logger: false });
   const request = (who, action, data = {}, key = now + '-' + (++serial)) => service({ action, data, key }, { appid: 'test-app', openid: who });
   const ok = async (...args) => { const result = await request(...args); assert.equal(result.ok, true, JSON.stringify(result)); return result.data; };
   const login = who => ok(who, 'login', { policyVersion: POLICY });
@@ -38,7 +38,7 @@ test('identity is server supplied; consent and login required', async () => {
   assert.equal((await f.request('a', 'snapshot')).error.code, 'UNAUTHENTICATED');
   const a = await f.login('a'); const b = await f.login('b'); assert.notEqual(a.user.id, b.user.id);
   assert.equal(JSON.stringify(a).includes('openid'), false);
-  const restricted = createService(new MemoryStore(), { appId: 'expected-app' });
+  const restricted = createService(new MemoryStore(), { appId: 'expected-app', logger: false });
   assert.equal((await restricted({ action: 'session' }, { openid: 'a', appid: 'other-app' })).error.code, 'FORBIDDEN');
 });
 test('household isolation covers reads, writes, shopping and forged home IDs', async () => {

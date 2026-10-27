@@ -22,7 +22,7 @@ class MemoryStore {
 
 function setup(start = Date.parse('2026-10-20T02:00:00Z')) { // 10:00 Asia/Shanghai
   const store = new MemoryStore(); let now = start; let serial = 0;
-  const service = createService(store, { clock: () => now });
+  const service = createService(store, { clock: () => now, logger: false });
   const call = (who, action, data = {}, key) => service({ action, data, ...(key === undefined ? {} : { key }) }, { appid: 'test-app', openid: who });
   const read = async (who, action, data = {}, key) => {
     const result = await call(who, action, data, key);
@@ -115,14 +115,17 @@ test('recipes match in-stock items, exclude expired batches and stay sorted', as
   ] });
   const result = await f.read('a', 'recipe.list', { servings: 3 });
   assert.equal(result.servings, 3);
-  assert.equal(result.recipes.length, 8);
-  const tomatoEgg = result.recipes.find(x => x.id === 'tomato-egg');
-  assert.deepEqual(tomatoEgg.matched, ['番茄', '鸡蛋']);
-  assert.equal(tomatoEgg.score, 1);
-  const broccoli = result.recipes.find(x => x.id === 'broccoli-chicken');
-  assert.equal(broccoli.score, 0, '西兰花已过期，不应参与匹配');
-  assert.ok(result.recipes[0].score >= result.recipes[result.recipes.length - 1].score);
-  assert.match(result.note, /不是 AI/);
+  assert.ok(result.recipes.length > 100, '应加载真实菜谱库');
+  const dish = result.recipes.find(x => x.name === '西红柿炒鸡蛋');
+  assert.ok(dish, '菜谱库应包含西红柿炒鸡蛋');
+  assert.equal(dish.missing.length, 0);
+  assert.deepEqual(dish.matched.map(x => x.need).sort(), ['番茄', '鸡蛋'].sort());
+  assert.ok(dish.sourceUrl.includes('HowToCook'));
+  assert.ok(result.ready.some(x => x.name === '西红柿炒鸡蛋'));
+  const broccoli = result.recipes.find(x => x.matched.some(m => m.name === '西兰花'));
+  assert.equal(broccoli, undefined, '西兰花已过期，不应参与匹配');
+  assert.ok(result.recipes[0].missing.length <= result.recipes[result.recipes.length - 1].missing.length);
+  assert.match(result.note, /HowToCook/);
 });
 
 test('daily todos list expiring batches and open shopping items only', async () => {
