@@ -222,11 +222,120 @@ function todoList(home, now) {
   };
 }
 
+const ALIAS_LIMIT = 50;
+const DEFAULT_SHELF_DAYS = { 冷藏: 7, 冷冻: 60, 常温: 3 };
+const SHELF_LIFE = [
+  { rule: '浆果', test: /草莓|蓝莓|树莓/, 冷藏: 3, 冷冻: 30, 常温: 2 },
+  { rule: '叶菜', test: /菠菜|生菜|油菜|小白菜|青菜|香菜|韭菜|芹菜|空心菜/, 冷藏: 3, 冷冻: 30, 常温: 1 },
+  { rule: '根茎', test: /土豆|马铃薯|胡萝卜|萝卜|红薯|山药|洋葱|南瓜|冬瓜/, 冷藏: 14, 冷冻: 60, 常温: 30 },
+  { rule: '菌菇', test: /蘑菇|香菇|口蘑|金针菇|杏鲍菇|木耳/, 冷藏: 5, 冷冻: 30, 常温: 3 },
+  { rule: '水果', test: /苹果|梨|橙|橘|柚|香蕉|葡萄|猕猴桃|西瓜|桃|芒果|菠萝/, 冷藏: 7, 冷冻: 60, 常温: 5 },
+  { rule: '水产', test: /鱼|虾|蟹|贝|鱿鱼/, 冷藏: 1, 冷冻: 60, 常温: 1 },
+  { rule: '肉类', test: /猪|牛|羊|鸡胸|鸡腿|肉|排骨|香肠/, 冷藏: 2, 冷冻: 90, 常温: 1 },
+  { rule: '蛋', test: /鸡蛋|鸭蛋|鹅蛋|鹌鹑蛋/, 冷藏: 30, 冷冻: 60, 常温: 14 },
+  { rule: '奶', test: /牛奶|酸奶|奶酪|奶油/, 冷藏: 7, 冷冻: 30, 常温: 1 },
+  { rule: '豆制品', test: /豆腐|豆干|豆皮|腐竹/, 冷藏: 3, 冷冻: 30, 常温: 1 },
+  { rule: '熟食', test: /熟食|卤味|剩菜|便当|凉菜/, 冷藏: 2, 冷冻: 30, 常温: 1 },
+  { rule: '主食', test: /面包|馒头|米饭|面条|饺子|包子/, 冷藏: 3, 冷冻: 30, 常温: 2 }
+];
+
+// User-defined, family-scoped aliases. No built-in dictionary and no automatic learning:
+// a wrong name is corrected only when the user explicitly configures it.
+function aliasMap(home) {
+  if (!home.aliases || typeof home.aliases !== 'object' || Array.isArray(home.aliases)) home.aliases = {};
+  return home.aliases;
+}
+
+function aliasTarget(map, start, from) {
+  let target = start;
+  const seen = new Set([from]);
+  for (let i = 0; i < 5; i++) {
+    const entry = map[target];
+    if (!entry) break;
+    if (seen.has(target)) return null;
+    seen.add(target);
+    target = entry.to;
+  }
+  return target === from ? null : target;
+}
+
+function setAlias(home, from, to, now) {
+  if (from === to) return null;
+  const map = aliasMap(home);
+  const target = aliasTarget(map, to, from);
+  if (!target) return null;
+  delete map[from];
+  map[from] = { to: target, updatedAt: now };
+  const keys = Object.keys(map);
+  if (keys.length > ALIAS_LIMIT) {
+    keys.sort((a, b) => (map[a].updatedAt || 0) - (map[b].updatedAt || 0));
+    for (const key of keys.slice(0, keys.length - ALIAS_LIMIT)) delete map[key];
+  }
+  return { from, to: target };
+}
+
+function listAliases(home) {
+  const map = home.aliases && typeof home.aliases === 'object' && !Array.isArray(home.aliases) ? home.aliases : {};
+  return Object.entries(map)
+    .map(([from, value]) => ({ from, to: value.to, updatedAt: value.updatedAt || 0 }))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+function removeAlias(home, from) {
+  const map = home.aliases;
+  if (!map || typeof map !== 'object' || !map[from]) return false;
+  delete map[from];
+  return true;
+}
+
+function resolveAlias(home, name) {
+  const map = home.aliases && typeof home.aliases === 'object' && !Array.isArray(home.aliases) ? home.aliases : {};
+  let current = name;
+  const seen = new Set([current]);
+  for (let i = 0; i < 5; i++) {
+    const entry = map[current];
+    if (!entry || !entry.to || seen.has(entry.to)) break;
+    seen.add(entry.to);
+    current = entry.to;
+  }
+  return current === name ? { name, aliasOf: '' } : { name: current, aliasOf: name };
+}
+
+function shelfDays(name, location) {
+  const entry = SHELF_LIFE.find(rule => rule.test.test(name));
+  const days = (entry && entry[location]) || DEFAULT_SHELF_DAYS[location] || DEFAULT_SHELF_DAYS['冷藏'];
+  return { days, rule: entry ? entry.rule : '默认' };
+}
+
+function addDays(iso, days) {
+  const stamp = new Date(iso + 'T00:00:00Z');
+  stamp.setUTCDate(stamp.getUTCDate() + days);
+  return stamp.toISOString().slice(0, 10);
+}
+
+// Only fills an empty expiry when the user picked "estimate"; an explicit date always wins.
+function applyEstimate(item, now) {
+  if (!item) return item;
+  if (item.source !== 'estimate' || item.expiry) { delete item.estimateBasis; return item; }
+  const { days, rule } = shelfDays(item.name, item.location);
+  item.expiry = addDays(dayKey(now), days);
+  item.estimateBasis = { days, rule, location: item.location };
+  return item;
+}
+
 exports.band = band;
 exports.dayKey = dayKey;
 exports.recordStats = recordStats;
 exports.summarize = summarize;
 exports.recipeList = recipeList;
 exports.todoList = todoList;
+exports.setAlias = setAlias;
+exports.listAliases = listAliases;
+exports.removeAlias = removeAlias;
+exports.resolveAlias = resolveAlias;
+exports.applyEstimate = applyEstimate;
+exports.shelfDays = shelfDays;
 exports.RECIPES = RECIPES;
 exports.MAX_STATS_DAYS = MAX_STATS_DAYS;
+exports.ALIAS_LIMIT = ALIAS_LIMIT;
+exports.SHELF_LIFE = SHELF_LIFE;

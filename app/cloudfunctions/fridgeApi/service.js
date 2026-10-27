@@ -1,11 +1,11 @@
 'use strict';
 const crypto = require('node:crypto');
-const { band, recordStats, summarize, recipeList, todoList } = require('./insights');
+const { band, recordStats, summarize, recipeList, todoList, setAlias, listAliases, removeAlias, resolveAlias, applyEstimate, ALIAS_LIMIT } = require('./insights');
 const POLICY = '2026-10-27-reminders';
 const { status: reminderStatus } = require('./reminders');
 const COLLECTIONS = { users: 'fridge_users', homes: 'fridge_homes', invites: 'fridge_invites' };
-const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list', 'reminder.status']);
-const ACTIONS = new Set([...READS, 'login', 'profile.update', 'home.create', 'home.join', 'home.leave', 'home.rotate', 'home.removeMember', 'home.transfer', 'item.add', 'item.update', 'item.change', 'shopping.add', 'shopping.set', 'shopping.remove', 'account.delete', 'reminder.subscribe', 'reminder.cancel']);
+const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list', 'reminder.status', 'account.export', 'alias.list']);
+const ACTIONS = new Set([...READS, 'login', 'profile.update', 'home.create', 'home.join', 'home.leave', 'home.rotate', 'home.removeMember', 'home.transfer', 'item.add', 'item.update', 'item.change', 'shopping.add', 'shopping.set', 'shopping.remove', 'account.delete', 'reminder.subscribe', 'reminder.cancel', 'alias.set', 'alias.remove']);
 class Fault extends Error { constructor(code, message) { super(message); this.code = code; } }
 const check = (ok, code, message) => { if (!ok) throw new Fault(code, message); };
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -108,6 +108,47 @@ exports.createService = (store, options = {}) => {
             output=reminderStatus(user,config,now);break;
           }
           case 'reminder.cancel': user.reminder={state:'off',result:'cancelled',finishedAt:now,lastSentDay:user.reminder&&user.reminder.lastSentDay||''};output={ok:true};break;
+          case 'account.export': {
+            needHome();
+            // Data portability: only this user's own household, never the invite code or OpenID.
+            output = {
+              schemaVersion: '1.0',
+              exportedAt: new Date(now).toISOString(),
+              user: { id: user.id, name: user.name },
+              home: {
+                id: home.id, name: home.name, ownerId: home.ownerId,
+                members: (home.members || []).map(member => ({ id: member.id, name: member.name }))
+              },
+              items: home.items || [],
+              shopping: home.shopping || [],
+              events: home.events || [],
+              stats: home.stats || null,
+              aliases: listAliases(home)
+            };
+            break;
+          }
+          case 'alias.list': {
+            needHome();
+            output = { items: listAliases(home), limit: ALIAS_LIMIT };
+            break;
+          }
+          case 'alias.set': {
+            needHome();
+            const from = text(data.from);
+            const to = text(data.to);
+            const applied = setAlias(home, from, to, now);
+            check(applied, 'INVALID', '别名不能指向自身，也不能形成循环');
+            homeChanged = true;
+            output = applied;
+            break;
+          }
+          case 'alias.remove': {
+            needHome();
+            removeAlias(home, text(data.from));
+            homeChanged = true;
+            output = { ok: true };
+            break;
+          }
           case 'profile.update':
             user.name = text(data.name, 24);
             if (home) { home.members.find(m => m.id === uid).name = user.name; homeChanged = true; }
@@ -164,7 +205,15 @@ exports.createService = (store, options = {}) => {
             check(home.items.length + data.items.length <= 300, 'LIMIT', '最多保存 300 批在库食材，请先整理库存');
             const ids = [];
             for (const input of data.items) {
-              const item = { ...fields(input), quantity: quantity(input.quantity), id: random(), version: 1, createdAt: now };
+              const base = fields(input);
+              const resolved = resolveAlias(home, base.name);
+              const item = {
+                ...base,
+                name: resolved.name,
+                ...(resolved.aliasOf ? { aliasOf: resolved.aliasOf } : {}),
+                quantity: quantity(input.quantity), id: random(), version: 1, createdAt: now
+              };
+              applyEstimate(item, now);
               if (input.mediaId) {
                 const media = await tx.get('fridge_media', input.mediaId);
                 check(media && media.homeId === home.id && media.ownerId === uid && media.state === 'ready' && media.expiresAt > now && !media.itemId, 'INVALID', '照片已失效或已关联食材，请重新选择');
@@ -177,7 +226,7 @@ exports.createService = (store, options = {}) => {
           case 'item.update': case 'item.change': {
             needHome(); const item = home.items.find(i => i.id === data.id); check(item, 'NOT_FOUND', '食材不存在或已消耗完');
             check(Number.isInteger(data.version) && item.version === data.version, 'CONFLICT', '库存已更新，请刷新后再操作');
-            if (action === 'item.update') { Object.assign(item, fields(data)); record(item, '修改资料', 0); }
+            if (action === 'item.update') { Object.assign(item, fields(data)); applyEstimate(item, now); record(item, '修改资料', 0); }
             else {
               check(['消耗', '丢弃', '盘点'].includes(data.kind), 'INVALID', '操作不正确');
               const n = quantity(data.quantity, data.kind === '盘点');
