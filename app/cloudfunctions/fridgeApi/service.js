@@ -35,6 +35,7 @@ function snapshot(home, user, now) {
     shopping: home.shopping, events: home.events, revision: home.revision };
 }
 exports.POLICY = POLICY;
+exports.ACTIONS = ACTIONS;
 const defaultLogger = entry => {
   if (process.env.FRIDGE_LOG === 'off') return;
   try { console.log(JSON.stringify(entry)); } catch { /* logging must never break a request */ }

@@ -59,6 +59,8 @@ cd vision
 | [`app/docs/菜谱数据.md`](app/docs/菜谱数据.md) | HowToCook 来源、清洗规则、覆盖率与已知限制 |
 | [`app/docs/限额与归档.md`](app/docs/限额与归档.md) | 家庭配额、单文档模型与扩展路径 |
 | [`app/docs/备份与恢复.md`](app/docs/备份与恢复.md) | 云数据库备份、恢复顺序与检查清单 |
+| [`app/docs/P0部署与联调清单.md`](app/docs/P0部署与联调清单.md) | 云函数部署、环境变量、接口自检 |
+| [`app/docs/前端待办.md`](app/docs/前端待办.md) | 前端 P0/P1 任务与验收材料 |
 | [`SECURITY.md`](SECURITY.md) | AppID 告警说明与密钥管理 |
 | [`docs/小程序接入识别服务.md`](docs/小程序接入识别服务.md) | 为什么模型不放进小程序、如何接 |
 | [`local-demo/验收记录.md`](local-demo/验收记录.md) | 本地演示版验收记录 |
