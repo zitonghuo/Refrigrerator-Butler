@@ -27,7 +27,7 @@ Page({
         const f = result.tempFiles[0];
         if (!f || f.size > (kind === 'image' ? 4 : 12) * 1024 * 1024 || (kind === 'video' && f.duration > 30.5)) throw Error('照片最多 4 MB；视频最多 30 秒、12 MB，请缩短或压缩后选择。');
         this.uploadTask = null;
-        this.setData({ local: { path: f.tempFilePath, size: f.size, kind }, preview: null, suggestion: null, selected: '', status: this.data.cloudEnabled ? '已选择，点击上传保存。' : '已选好，可以在此查看。当前为临时预览，不会上传或自动保存。' });
+        this.setData({ local: { path: f.tempFilePath, size: f.size, kind }, preview: null, suggestion: null, foods: null, confirmed: false, selected: '', status: this.data.cloudEnabled ? '已选择，点击上传保存。' : '已选好，可以在此查看。当前为临时预览，不会上传或自动保存。' });
       } catch (error) {
         if (/cancel/.test(error.errMsg || '')) return;
         throw Error(error.message || '无法使用相机或相册，请检查微信权限后重试。');
@@ -41,7 +41,7 @@ Page({
   clearLocal() {
     if (this.data.busy) return;
     this.uploadTask = null;
-    this.setData({ local: null, error: '', status: '' });
+    this.setData({ local: null, foods: null, suggestion: null, confirmed: false, selected: '', error: '', status: '' });
   },
   previewLocal() {
     const local = this.data.local;
@@ -93,6 +93,18 @@ Page({
       this.setData({ foods: result.candidates, status: result.candidates.length ? '识别完成，请核对后带入入库表单。' : '没有识别到食材，可以手动填写或换一张照片。' });
     });
   },
+  recognizeGlm() {
+    const local=this.data.local;if(!local||local.kind!=='image')return;
+    return api.run(this,async()=>{
+      if(!await api.ensure())return;
+      const ready=await api.call('vision.status');if(!ready.ready)throw Error('智谱照片识别尚未配置，暂时可以手动录入。');
+      const consent=await invoke('showModal',{title:'使用智谱识别照片',content:'本次压缩照片将经微信云函数发送给智谱开放平台（GLM-4V-Flash）处理。请避开人脸、证件等个人信息。识别可能出错，数量和日期需自行填写。是否发送？',confirmText:'同意发送'});
+      if(!consent.confirm)return;
+      this.setData({foods:null,suggestion:null,selected:'',confirmed:false,status:'正在识别，最多等待约半分钟…'});
+      const foods=await require('../../utils/glm-vision').recognize(local.path,ready.consentVersion);
+      this.setData({foods,status:foods.length?'请核对名称，数量、日期和存放位置需自行确认。':'未识别到明确食材，请手动填写。'});
+    });
+  },
   recognizeLocal() {
     const local = this.data.local;
     if (!local || local.kind !== 'image' || !this.data.visionEnabled) return;
@@ -104,6 +116,7 @@ Page({
     });
   },
   useFoods() {
+    if(!this.data.confirmed){this.setData({error:'请先核对候选名称。'});return;}
     const auth = api.current(); if (!auth || !this.data.foods || !this.data.foods.length) return;
     const existing = wx.getStorageSync('add-draft-v2');
     let rows = existing && existing.uid === auth.user.id && existing.homeId === auth.user.homeId ? existing.rows : [];
@@ -113,7 +126,7 @@ Page({
     if (rows.length + this.data.foods.length > 20) { this.setData({ error: '草稿最多 20 项，请先保存已有食材。' }); return; }
     this.data.foods.forEach((food, index) => rows.push({
       name: food.name,
-      quantity: food.quantity ? String(food.quantity) : '1',
+      quantity: food.quantity ? String(food.quantity) : '',
       unit: food.unit,
       location: food.location,
       expiry: food.expiry,

@@ -20,7 +20,7 @@ function walk(dir) {
 }
 
 walk(MINI);
-const missing = [...used].filter(action => !action.startsWith('media.') && !ACTIONS.has(action));
+const missing = [...used].filter(action => !action.startsWith('media.') && !require('../cloudfunctions/fridgeApi/glm-vision').ACTIONS.has(action) && !ACTIONS.has(action));
 const unused = [...ACTIONS].filter(action => !used.has(action)).sort();
 
 console.log(JSON.stringify({

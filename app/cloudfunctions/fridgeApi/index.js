@@ -67,6 +67,8 @@ exports.main = async event => {
   const context = cloud.getWXContext();
   if(event&&event.Type==='Timer')return dispatchReminders(event,context);
   const identity = { openid: context.OPENID, appid: context.APPID };
+  if(event && require('./glm-vision').ACTIONS.has(event.action))return glmVision(event,identity);
   if (event && typeof event.action === 'string' && event.action.startsWith('media.')) return media(event, identity);
   return service(event, identity);
 };
+const glmVision=require('./glm-vision').createVision({store,service,env:process.env});
