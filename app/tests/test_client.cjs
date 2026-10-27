@@ -43,3 +43,16 @@ test('cold start reconciles an account deletion whose response was lost', async 
   assert.equal(await f.api.ensure(false), false);
   assert.equal(f.storage.has('pending-v2-a'), false); assert.equal(f.storage.has('last-user-v2'), false);
 });
+
+test('login policy mismatch stays on the page and explains how to update', async () => {
+  let page; let redirects=0; let stored=0;
+  const code=fs.readFileSync(path.join(__dirname,'../miniprogram/pages/login/login.js'),'utf8');
+  vm.runInNewContext(code,{
+    require: name=>name.includes('utils/api')?{call:async()=>{throw Object.assign(new Error('consent'),{code:'CONSENT_REQUIRED'})}}:{appName:'test',cloudEnv:'test',policyVersion:'new'},
+    Page:value=>{page=value},wx:{reLaunch(){redirects++},switchTab(){redirects++},setStorageSync(){stored++}}
+  });
+  page.setData=values=>Object.assign(page.data,values);page.data.accepted=true;
+  await page.login();
+  assert.equal(redirects,0);assert.equal(stored,0);assert.equal(page.data.busy,false);
+  assert.match(page.data.error,/版本不一致/);
+});
