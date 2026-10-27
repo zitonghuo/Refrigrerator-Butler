@@ -1,10 +1,10 @@
 'use strict';
 const crypto = require('node:crypto');
-const { band, recordStats, summarize, recipeList, todoList, setAlias, listAliases, removeAlias, resolveAlias, applyEstimate, ALIAS_LIMIT } = require('./insights');
+const { band, recordStats, summarize, recipeList, todoList, setAlias, listAliases, removeAlias, resolveAlias, applyEstimate, reconcile, ALIAS_LIMIT } = require('./insights');
 const POLICY = '2026-10-27-reminders';
 const { status: reminderStatus } = require('./reminders');
 const COLLECTIONS = { users: 'fridge_users', homes: 'fridge_homes', invites: 'fridge_invites' };
-const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list', 'reminder.status', 'account.export', 'alias.list']);
+const READS = new Set(['session', 'snapshot', 'item.get', 'report.summary', 'recipe.list', 'todo.list', 'inventory.reconcile', 'reminder.status', 'account.export', 'alias.list']);
 const ACTIONS = new Set([...READS, 'login', 'profile.update', 'home.create', 'home.join', 'home.leave', 'home.rotate', 'home.removeMember', 'home.transfer', 'item.add', 'item.update', 'item.change', 'shopping.add', 'shopping.set', 'shopping.remove', 'account.delete', 'reminder.subscribe', 'reminder.cancel', 'alias.set', 'alias.remove']);
 class Fault extends Error { constructor(code, message) { super(message); this.code = code; } }
 const check = (ok, code, message) => { if (!ok) throw new Fault(code, message); };
@@ -106,6 +106,17 @@ exports.createService = (store, options = {}) => {
           case 'report.summary': needHome(); output = summarize(home, data, now); break;
           case 'recipe.list': needHome(); output = recipeList(home, data, now); break;
           case 'todo.list': needHome(); output = todoList(home, now); break;
+          case 'inventory.reconcile': {
+            needHome();
+            check(Array.isArray(data.items) && data.items.length >= 1 && data.items.length <= 50, 'INVALID', '请提交 1 至 50 项盘点结果');
+            const entries = data.items.map(input => ({
+              name: text(input.name),
+              unit: text(input.unit, 12),
+              quantity: quantity(input.quantity, true)
+            }));
+            output = reconcile(home, entries, now);
+            break;
+          }
           case 'reminder.status': output=reminderStatus(user,options.reminders||{},now); break;
           case 'reminder.subscribe': {
             needHome();const config=options.reminders||{};

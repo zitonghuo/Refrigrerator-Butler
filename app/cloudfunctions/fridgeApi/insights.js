@@ -323,7 +323,66 @@ function applyEstimate(item, now) {
   return item;
 }
 
+// Read-only comparison between a physical count and the current batches.
+// It never writes: the client confirms each change through item.change/item.add.
+function reconcile(home, entries, now = Date.now()) {
+  const keyOf = (name, unit) => name + '\u0000' + unit;
+  const inputs = new Map();
+  for (const entry of entries) {
+    const name = resolveAlias(home, entry.name).name;
+    const key = keyOf(name, entry.unit);
+    if (!inputs.has(key)) inputs.set(key, { name, unit: entry.unit, quantity: 0 });
+    const bucket = inputs.get(key);
+    bucket.quantity = Math.round((bucket.quantity + entry.quantity) * 1e6) / 1e6;
+  }
+
+  const batches = new Map();
+  for (const item of (home.items || []).filter(row => row.quantity > 0)) {
+    const name = resolveAlias(home, item.name).name;
+    const key = keyOf(name, item.unit);
+    if (!batches.has(key)) batches.set(key, { name, unit: item.unit, quantity: 0, items: [] });
+    const group = batches.get(key);
+    group.quantity = Math.round((group.quantity + item.quantity) * 1e6) / 1e6;
+    group.items.push({
+      itemId: item.id, name: item.name, quantity: item.quantity,
+      location: item.location, expiry: item.expiry, band: band(item.expiry, now)
+    });
+  }
+
+  const groups = [];
+  const newGroups = [];
+  for (const [key, input] of inputs) {
+    const group = batches.get(key);
+    if (!group) { newGroups.push({ name: input.name, unit: input.unit, inputQuantity: input.quantity }); continue; }
+    const delta = Math.round((input.quantity - group.quantity) * 1e6) / 1e6;
+    groups.push({
+      name: input.name, unit: input.unit,
+      inputQuantity: input.quantity, currentQuantity: group.quantity, delta,
+      status: delta === 0 ? 'same' : delta > 0 ? 'more' : 'less',
+      batches: group.items
+    });
+  }
+
+  const unmentioned = [];
+  for (const [key, group] of batches) {
+    if (!inputs.has(key)) unmentioned.push({ name: group.name, unit: group.unit, quantity: group.quantity, batches: group.items });
+  }
+  const counts = { same: 0, more: 0, less: 0 };
+  for (const group of groups) counts[group.status]++;
+  return {
+    summary: {
+      inputs: inputs.size, matched: groups.length, new: newGroups.length,
+      same: counts.same, more: counts.more, less: counts.less, unmentioned: unmentioned.length
+    },
+    groups,
+    newGroups,
+    unmentioned,
+    note: '只做比对，不修改库存；确认后用 item.change 盘点，或用 item.add 新增批次。'
+  };
+}
+
 exports.band = band;
+exports.reconcile = reconcile;
 exports.dayKey = dayKey;
 exports.recordStats = recordStats;
 exports.summarize = summarize;
