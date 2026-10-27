@@ -36,7 +36,7 @@ async function setup(send) {
  return {store,call,ok,food,sub,dispatch,delivered,uid,snap,advance:ms=>now+=ms};
 }
 test('reminder requires a configured template and explicit accepted result',async()=>{
- assert.equal(settings({REMINDERS_READY:'true'}).ready,false);
+ assert.equal(settings({REMINDERS_READY:'true',REMINDER_TEMPLATE_ID:'other_template_id'}).ready,false);
  assert.equal(settings({REMINDERS_READY:'true',REMINDER_TEMPLATE_ID:'template_test_id',REMINDER_FIELDS:'{"name":"thing1","date":"thing1"}'}).ready,false);
  const f=await setup();assert.equal((await f.call('a','reminder.subscribe',{templateId:'forged',accepted:true})).ok,false);
  assert.equal((await f.call('a','reminder.subscribe',{templateId:cfg.templateId,accepted:false})).ok,false);
@@ -63,4 +63,17 @@ test('uncertain send is never automatically retried, and quiet hours do not cons
 test('second subscription on the same day waits for a later day',async()=>{
  const f=await setup();await f.food();await f.sub();await f.dispatch({Type:'Timer'},{});await f.sub();await f.dispatch({Type:'Timer'},{});assert.equal(f.delivered.length,1);
  f.advance(86400000);await f.dispatch({Type:'Timer'},{});assert.equal(f.delivered.length,2);
+});
+
+test('actual five-field template is gated and has complete batch counts and Beijing days',async()=>{
+ const actual=settings({REMINDERS_READY:'true',REMINDER_STATE:'trial'});
+ assert.equal(actual.ready,true);
+ assert.equal(settings({}).ready,false);
+ assert.equal(settings({REMINDERS_READY:'true',REMINDER_FIELDS:'null'}).ready,false);
+ assert.equal(settings({REMINDERS_READY:'true',REMINDER_FIELDS:'{"name":"thing1","date":"time2","note":"thing3"}'}).ready,false);
+ const f=await setup();await f.food('2026-10-27');await f.food('2026-10-29');await f.sub();
+ const custom={...actual,templateId:cfg.templateId};
+ const dispatch=createDispatcher({store:f.store,config:custom,clock:()=>Date.parse('2026-10-27T11:59:00Z'),listUserIds:async after=>after?[]:[f.uid],send:async data=>{f.delivered.push(data);return {errCode:0}}});
+ await dispatch({Type:'Timer'},{});
+ assert.deepEqual(f.delivered[0].data,{thing1:{value:'冰箱临期食材'},time2:{value:'2026-10-27'},character_string5:{value:'2'},number6:{value:'0'},thing3:{value:'数量按临期批次计，请及时查看'}});
 });
