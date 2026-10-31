@@ -22,6 +22,26 @@ objects and up to 149 objects in one image.
 | Trained produce detector | 0.15 | 640 | 71.67% | 72.91% | 9.59 |
 | Trained produce detector | 0.25 | 640 | 63.49% | 76.76% | 5.26 |
 
+## Merged 71-Class Baseline (2026-10-31)
+
+A second baseline merges FoodInsSeg (57 ingredient classes) with the LVIS
+produce split, adding meat, egg, tofu, dairy and staple classes. Proper
+train/val/test split; 20 epochs, 640, YOLOv8s.
+
+| Metric | FoodInsSeg test | LVIS test | Overall |
+| --- | ---: | ---: | ---: |
+| Recall | 53.3% | 74.0% | 55.0% |
+| Class accuracy | 80.0% | 79.1% | 79.9% |
+| End-to-end | 42.6% | 58.5% | 44.0% |
+| FP / image | 6.02 | 8.45 | 6.21 |
+
+On the same 180 LVIS images, the previous 47-class produce model had 71.7%
+recall / 72.9% class / 52.3% end-to-end / 9.59 FP. The merged model is better on
+produce but still weak on meat and staples; see
+`outputs/china_fridge_v1_test_report.md`. The serving default stays on the
+47-class produce model until the 71-class catalog mapping and a real fridge test
+are done.
+
 ## Chinese Household Class Pruning (2026-10-31)
 
 The original detector had 63 classes, including foods that are rare in Chinese

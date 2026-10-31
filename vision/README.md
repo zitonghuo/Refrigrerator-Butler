@@ -80,6 +80,55 @@ python scripts/prune_rare_classes.py `
 
 The server's `--produce-weights` default points at this v2 file.
 
+## Merged Chinese-Fridge Training Set (2026-10-31)
+
+Because the produce detector has no meat, egg, tofu or staple classes, the next
+baseline merges FoodInsSeg with the existing LVIS produce split:
+
+```powershell
+python scripts/build_china_fridge_dataset.py `
+  --foodinsseg E:\fridge-keeper-datasets\datasets\FoodInsSeg `
+  --lvis E:\fridge-keeper-datasets\datasets\fruits_vegetables_lvis_full `
+  --output E:\fridge-keeper-datasets\datasets\china_fridge_v1 `
+  --config configs/china_fridge_classes_v1.json
+```
+
+Result:
+
+```text
+71 classes
+train: 10,532 images / 195,071 boxes
+val:    1,172 images /  23,972 boxes
+test:   2,315 images /  27,848 boxes
+```
+
+FoodInsSeg is **CC BY-NC-SA 4.0, non-commercial research only**; see
+`THIRD_PARTY_NOTICES.md`. Images/labels stay outside the repository.
+
+Train with:
+
+```powershell
+python scripts/train_detector.py `
+  --model weights/yolov8s.pt `
+  --data E:\fridge-keeper-datasets\datasets\china_fridge_v1\data.yaml `
+  --epochs 20 --imgsz 640 --batch 8 --device 0 --amp `
+  --name china_fridge_v1_baseline
+```
+
+Evaluate the held-out test split:
+
+```powershell
+python scripts/evaluate_unified.py `
+  --weights runs/china_fridge_v1_v2/weights/best.pt `
+  --split test
+```
+
+The 20-epoch baseline reached 74.0% recall / 79.1% class accuracy on the 180
+LVIS test images, and 53.3% / 80.0% on the 2,135 FoodInsSeg test images. It adds
+meat/egg/tofu classes but those are still weak; see
+`outputs/china_fridge_v1_test_report.md`.
+
+
 ## Chinese Fridge Catalog
 
 Serving-time labels are standardized by:
