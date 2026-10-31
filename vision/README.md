@@ -60,11 +60,25 @@ needs `weights/yolov8s.pt` to start.
 The specialized produce detector is:
 
 ```text
-weights/fruits_vegetables_yolov8s_v1.pt
+weights/fruits_vegetables_yolov8s_cn_v2.pt
 ```
 
-It was trained on 6,721 images and 63 fruit and vegetable classes. The complete
-comparison is in `MODEL_EVALUATION.md`.
+It was trained on 6,721 images and 63 fruit and vegetable classes, then pruned to
+47 classes for Chinese household use. Rare or duplicated classes such as
+chickpea, artichoke, brussels sprouts, blackberry, raspberry, coconut, lime,
+fig, prune, turnip, clementine and duplicate `Strawberry`/`Tomato` outputs are
+removed from the class branch. The original 63-class weights are kept as
+`fruits_vegetables_yolov8s_v1.pt` for comparison. Weights are excluded from Git;
+after downloading the v1 weights, regenerate the Chinese-household model with:
+
+```powershell
+python scripts/prune_rare_classes.py `
+  --weights weights/fruits_vegetables_yolov8s_v1.pt `
+  --config configs/china_household_filter_v1.json `
+  --output weights/fruits_vegetables_yolov8s_cn_v2.pt
+```
+
+The server's `--produce-weights` default points at this v2 file.
 
 ## Chinese Fridge Catalog
 

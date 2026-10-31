@@ -231,7 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--produce-weights",
         type=Path,
-        default=SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8s_v1.pt",
+        default=SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8s_cn_v2.pt",
     )
     parser.add_argument(
         "--backend",

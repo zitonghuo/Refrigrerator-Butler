@@ -22,6 +22,34 @@ objects and up to 149 objects in one image.
 | Trained produce detector | 0.15 | 640 | 71.67% | 72.91% | 9.59 |
 | Trained produce detector | 0.25 | 640 | 63.49% | 76.76% | 5.26 |
 
+## Chinese Household Class Pruning (2026-10-31)
+
+The original detector had 63 classes, including foods that are rare in Chinese
+households or duplicated because the upstream dataset mixed label styles. The
+serving model is now:
+
+```text
+weights/fruits_vegetables_yolov8s_cn_v2.pt
+```
+
+It keeps 47 classes. Removed from the class branch:
+
+```text
+artichoke, blackberry, brussels sprouts, chickpea/garbanzo,
+coconut, fig, gourd, lime, pickle, prune, raspberry, turnip,
+clementine, cayenne (duplicate chili), Strawberry (duplicate),
+Tomato (duplicate)
+```
+
+The original 63-class weights remain as
+`weights/fruits_vegetables_yolov8s_v1.pt` for comparison. The table above was
+measured on the original model; the retained classes keep their detection
+behaviour, but the removed classes are no longer offered as candidates.
+
+The blocked list is maintained in
+`configs/china_household_filter_v1.json`; the same list is applied to the
+free-text candidates returned by the online vision model.
+
 ## Recommended Operating Point
 
 For user-confirmed inventory, use the trained produce detector at confidence
