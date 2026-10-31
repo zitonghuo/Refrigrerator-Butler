@@ -158,6 +158,13 @@ positives from 7.26 to 5.54, but is about 1.4 points lower on the 180 LVIS
 images. Keep v2 as serving default until a real-fridge test; see
 `outputs/produce_v3_test_report.md`.
 
+### Crop classifier upper bound (negative result)
+
+A 45-class ResNet18 was trained on 37,476 GT-box crops. Test Top-1 was only
+55.7% (Top-3 75.0%), far below the detector's 86.3% class accuracy on matched
+boxes. Do not integrate this crop stage; see
+`outputs/crop_classifier_report.md`.
+
 
 ## Chinese Fridge Catalog
 

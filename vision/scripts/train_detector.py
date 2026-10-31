@@ -31,6 +31,11 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--amp", action="store_true")
     parser.add_argument("--name", default="lvis_produce_v1")
+    parser.add_argument("--lr0", type=float, default=0.01)
+    parser.add_argument("--freeze", type=int, default=0)
+    parser.add_argument("--patience", type=int, default=5)
+    parser.add_argument("--mixup", type=float, default=0.0)
+    parser.add_argument("--scale", type=float, default=0.5)
     args = parser.parse_args()
 
     model = YOLO(str(args.model))
@@ -45,9 +50,13 @@ def main() -> int:
         name=args.name,
         exist_ok=True,
         plots=False,
-        patience=5,
+        patience=args.patience,
         cache=False,
         amp=args.amp,
+        lr0=args.lr0,
+        freeze=args.freeze,
+        mixup=args.mixup,
+        scale=args.scale,
     )
     return 0
 
