@@ -128,6 +128,36 @@ LVIS test images, and 53.3% / 80.0% on the 2,135 FoodInsSeg test images. It adds
 meat/egg/tofu classes but those are still weak; see
 `outputs/china_fridge_v1_test_report.md`.
 
+### Produce-only follow-up
+
+Filter the merged set back to the 47 produce classes:
+
+```powershell
+python scripts/build_produce_dataset.py `
+  --source E:\fridge-keeper-datasets\datasets\china_fridge_v1 `
+  --weights weights/fruits_vegetables_yolov8s_cn_v2.pt `
+  --output E:\fridge-keeper-datasets\datasets\china_fridge_produce_v1
+```
+
+Fine-tune from v2 for 15 epochs, then evaluate on the held-out test split:
+
+```powershell
+python scripts/train_detector.py `
+  --model weights/fruits_vegetables_yolov8s_cn_v2.pt `
+  --data E:\fridge-keeper-datasets\datasets\china_fridge_produce_v1\data.yaml `
+  --epochs 15 --imgsz 640 --batch 8 --device 0 --amp `
+  --name china_fridge_produce_v3
+
+python scripts/evaluate_unified.py `
+  --dataset E:\fridge-keeper-datasets\datasets\china_fridge_produce_v1 `
+  --weights runs/china_fridge_produce_v3/weights/best.pt --split test
+```
+
+v3 raises combined-test class accuracy from 71.9% to 86.3% and lowers false
+positives from 7.26 to 5.54, but is about 1.4 points lower on the 180 LVIS
+images. Keep v2 as serving default until a real-fridge test; see
+`outputs/produce_v3_test_report.md`.
+
 
 ## Chinese Fridge Catalog
 

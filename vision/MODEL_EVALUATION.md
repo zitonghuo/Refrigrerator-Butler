@@ -22,6 +22,23 @@ objects and up to 149 objects in one image.
 | Trained produce detector | 0.15 | 640 | 71.67% | 72.91% | 9.59 |
 | Trained produce detector | 0.25 | 640 | 63.49% | 76.76% | 5.26 |
 
+## Produce-Only v3 (2026-10-31)
+
+The merged 71-class set was filtered back to the 47 produce classes used by the
+serving model; images without produce labels are kept as negatives. Fine-tuned
+from `fruits_vegetables_yolov8s_cn_v2.pt` for 15 epochs.
+
+| Test set | Model | Recall | Class accuracy | End-to-end | FP/image |
+| --- | --- | ---: | ---: | ---: | ---: |
+| All 2,315 | v2 | 61.1% | 71.9% | 43.9% | 7.26 |
+| All 2,315 | v3 | 61.0% | **86.3%** | **52.7%** | **5.54** |
+| LVIS 180 | v2 | **72.4%** | 82.6% | **59.8%** | 10.04 |
+| LVIS 180 | v3 | 71.0% | 82.3% | 58.4% | **7.74** |
+
+v3 is better on the combined test and on false positives, but slightly worse on
+the 180 LVIS images. Keep v2 as the serving default until a real-fridge test.
+See `outputs/produce_v3_test_report.md`.
+
 ## Merged 71-Class Baseline (2026-10-31)
 
 A second baseline merges FoodInsSeg (57 ingredient classes) with the LVIS
