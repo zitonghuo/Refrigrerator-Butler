@@ -180,6 +180,10 @@ Recall-first setting: conf 0.10, agnostic NMS, TTA. Higher input sizes
 (960/1280) did not help. Do not auto-count at low thresholds; exact count is
 only 14—19%. See `outputs/produce_recall_report.md`.
 
+Simple tiling was worse (66.9% recall, 11.0 FP/image on a 500-image subset), and
+a v2+v3 union reached 78.9% recall but 15.2 FP/image at conf 0.10. Neither is a
+default; TTA is the better recall-first trade-off.
+
 
 ## Chinese Fridge Catalog
 

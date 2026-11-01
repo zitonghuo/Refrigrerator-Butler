@@ -32,6 +32,8 @@ class HybridFoodRecognizer:
         iou_threshold: float = 0.5,
         max_detections: int = 300,
         image_size: int = 640,
+        agnostic_nms: bool = False,
+        augment: bool = False,
     ) -> None:
         self.produce = FoodRecognizer(
             produce_weights,
@@ -40,6 +42,8 @@ class HybridFoodRecognizer:
             iou_threshold=iou_threshold,
             max_detections=max_detections,
             image_size=image_size,
+            agnostic_nms=agnostic_nms,
+            augment=augment,
         )
         self.general = FoodRecognizer(
             general_weights,

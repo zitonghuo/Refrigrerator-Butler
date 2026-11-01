@@ -247,6 +247,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--conf", type=float, default=0.15)
     parser.add_argument("--iou", type=float, default=0.5)
     parser.add_argument("--imgsz", type=int, default=640)
+    parser.add_argument("--agnostic-nms", action="store_true")
+    parser.add_argument("--augment", action="store_true")
     return parser
 
 
@@ -261,6 +263,8 @@ def main(argv: list[str] | None = None) -> int:
             general_confidence=0.25,
             iou_threshold=args.iou,
             image_size=args.imgsz,
+            agnostic_nms=args.agnostic_nms,
+            augment=args.augment,
         )
     elif args.backend == "world":
         from .open_vocab import OpenVocabularyRecognizer
@@ -282,6 +286,8 @@ def main(argv: list[str] | None = None) -> int:
             confidence_threshold=args.conf,
             iou_threshold=args.iou,
             image_size=args.imgsz,
+            agnostic_nms=args.agnostic_nms,
+            augment=args.augment,
         )
     VisionHandler.recognizer = recognizer
     server = ThreadingHTTPServer((args.host, args.port), VisionHandler)
