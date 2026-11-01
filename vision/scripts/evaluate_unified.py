@@ -47,11 +47,13 @@ def main() -> None:
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--device", default="0")
     parser.add_argument("--split", default="val")
+    parser.add_argument("--agnostic-nms", action="store_true")
+    parser.add_argument("--augment", action="store_true")
     parser.add_argument("--output", type=Path, default=Path("outputs/china_fridge_v1_eval.json"))
     args = parser.parse_args()
 
     names = parse_names(args.dataset / "data.yaml")
-    recognizer = FoodRecognizer(args.weights, device=args.device, confidence_threshold=args.conf, image_size=args.imgsz)
+    recognizer = FoodRecognizer(args.weights, device=args.device, confidence_threshold=args.conf, image_size=args.imgsz, agnostic_nms=args.agnostic_nms, augment=args.augment)
     stats = defaultdict(lambda: {"gt": 0, "matched": 0, "correct": 0})
     groups = defaultdict(lambda: {"images": 0, "gt": 0, "matched": 0, "correct": 0, "fp": 0})
     errors = []

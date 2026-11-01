@@ -165,6 +165,21 @@ A 45-class ResNet18 was trained on 37,476 GT-box crops. Test Top-1 was only
 boxes. Do not integrate this crop stage; see
 `outputs/crop_classifier_report.md`.
 
+### Recall tuning
+
+The previous 0.15 confidence missed too many objects. On the held-out test set:
+
+| Setting | Recall | End-to-end | FP/image |
+| --- | ---: | ---: | ---: |
+| conf 0.15 | 61.0% | 52.7% | 5.54 |
+| conf 0.10 + agnostic NMS | 67.4% | 57.4% | 7.40 |
+| conf 0.10 + agnostic NMS + TTA | **73.9%** | **62.2%** | 10.17 |
+| conf 0.05 + agnostic NMS | 75.3% | 62.9% | 12.36 |
+
+Recall-first setting: conf 0.10, agnostic NMS, TTA. Higher input sizes
+(960/1280) did not help. Do not auto-count at low thresholds; exact count is
+only 14—19%. See `outputs/produce_recall_report.md`.
+
 
 ## Chinese Fridge Catalog
 

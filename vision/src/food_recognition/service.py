@@ -186,6 +186,8 @@ class FoodRecognizer:
         iou_threshold: float = 0.5,
         max_detections: int = 300,
         image_size: int = 640,
+        agnostic_nms: bool = False,
+        augment: bool = False,
     ) -> None:
         self.weights = Path(weights).resolve()
         if not self.weights.is_file():
@@ -199,6 +201,8 @@ class FoodRecognizer:
         self.iou_threshold = iou_threshold
         self.max_detections = max_detections
         self.image_size = image_size
+        self.agnostic_nms = agnostic_nms
+        self.augment = augment
         self.model = YOLO(str(self.weights))
 
     def predict_image(self, image_path: str | Path) -> RecognitionResult:
@@ -218,6 +222,8 @@ class FoodRecognizer:
             max_det=self.max_detections,
             device=self.device,
             imgsz=self.image_size,
+            agnostic_nms=self.agnostic_nms,
+            augment=self.augment,
             verbose=False,
         )
         if not predictions:
