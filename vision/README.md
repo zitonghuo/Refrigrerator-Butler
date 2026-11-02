@@ -83,14 +83,16 @@ The server's `--produce-weights` default points at this v2 file.
 ## Scope
 
 This service only recognizes **raw produce before it is put into the fridge**.
-Cooked dishes, plated meals and fridge-interior datasets are out of scope and
-have been removed from the training data and weights. The serving default is the
-47-class produce model; meat, eggs, tofu and packaged food are handled manually
-or by a separate future module.
+Cooked dishes, plated meals and restaurant photos are out of scope and have
+been removed from the training data and weights. Ingredient photos taken on a
+table or shelf are in scope. The serving default is the 47-class produce model;
+meat, eggs, tofu and packaged food are handled manually or by a separate future
+module.
 
 Only raw-produce training/evaluation data is kept outside the repository:
 
-`fruits_vegetables_lvis_full` and `fruits_vegetables_lvis_eval_v1`.
+`fruits_vegetables_lvis_full`, `fruits_vegetables_lvis_eval_v1`, and the
+IntAli produce subset.
 
 ### COCO supplement (negative result)
 
@@ -117,6 +119,24 @@ The COCO style is clearly harder for v2. Strong colour/geometry augmentation
 improved COCO end-to-end by only 2.4 points while dropping LVIS by 9 points, so
 it is not adopted. Multi-style real photos are still needed; see
 `outputs/cross_style_report.md`.
+
+### IntAli target-style fine-tune
+
+IntAli Food Dataset (4,019 images, 41 contributors, ingredients on tables or
+shelves) was filtered to 26 produce classes: 1,130 train, 125 val, 382 test.
+
+| Test | Model | Recall | Class | End-to-end | FP/image |
+| --- | --- | ---: | ---: | ---: | ---: |
+| IntAli | v2 | 75.2% | 57.6% | 43.3% | 4.18 |
+| IntAli | IntAli-only fine-tune | 89.7% | 91.2% | 81.8% | 0.72 |
+| IntAli | mixed fine-tune | **91.0%** | **91.0%** | **82.8%** | **1.52** |
+| LVIS | mixed fine-tune | 46.3% | 74.1% | 34.3% | 5.18 |
+
+Target-style data gives the largest gain so far, but IntAli-only training
+forgets LVIS (9.1% recall). Mixed training keeps the target gain and partially
+retains source data. Candidate weights:
+`runs/raw_mixed_v1/weights/best.pt`; the serving default remains v2 until a
+Chinese countertop test. See `outputs/intali_report.md`.
 
 ## Chinese Fridge Catalog
 

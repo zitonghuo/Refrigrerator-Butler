@@ -18,6 +18,16 @@ reviewed independently before production use.
 The files under `samples/` are upstream demo uploads retained only for local
 smoke testing.
 
+## IntAli Food Dataset
+
+- Project: https://aimas.cs.pub.ro/intali/
+- Kaggle: https://www.kaggle.com/datasets/miketrs/intali-food-dataset
+- License: CC BY-NC-SA 4.0 (non-commercial)
+- Used for a raw-produce fine-tuning/evaluation subset (26 mapped classes,
+  1,130 train / 125 val / 382 test images). Images stay outside this repository.
+- Attribution and share-alike terms apply to derived material; do not use this
+  model commercially without checking the dataset licence.
+
 ## LVIS / COCO
 
 - LVIS: https://www.lvisdataset.org/
