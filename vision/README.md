@@ -146,7 +146,7 @@ Serving-time labels are standardized by:
 configs/china_fridge_catalog_v1.json
 ```
 
-The catalog contains 79 common ingredients normally stored in Chinese
+The catalog contains 83 common ingredients normally stored in Chinese
 households' refrigerators or freezers. It provides:
 
 - Chinese display names
