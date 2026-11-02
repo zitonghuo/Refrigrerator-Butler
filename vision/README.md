@@ -23,7 +23,7 @@ inventory writes are intentionally not included here.
 The local LVIS fruit and vegetable evaluation subset is under:
 
 ```text
-datasets/fruits_vegetables_lvis_eval_v1/
+ruits_vegetables_lvis_full and ruits_vegetables_lvis_eval_v1.
 ```
 
 It contains 180 manually labeled images and 2,725 object boxes. See
@@ -80,110 +80,17 @@ python scripts/prune_rare_classes.py `
 
 The server's `--produce-weights` default points at this v2 file.
 
-## Merged Chinese-Fridge Training Set (2026-10-31)
+## Scope
 
-Because the produce detector has no meat, egg, tofu or staple classes, the next
-baseline merges FoodInsSeg with the existing LVIS produce split:
+This service only recognizes **raw produce before it is put into the fridge**.
+Cooked dishes, plated meals and fridge-interior datasets are out of scope and
+have been removed from the training data and weights. The serving default is the
+47-class produce model; meat, eggs, tofu and packaged food are handled manually
+or by a separate future module.
 
-```powershell
-python scripts/build_china_fridge_dataset.py `
-  --foodinsseg E:\fridge-keeper-datasets\datasets\FoodInsSeg `
-  --lvis E:\fridge-keeper-datasets\datasets\fruits_vegetables_lvis_full `
-  --output E:\fridge-keeper-datasets\datasets\china_fridge_v1 `
-  --config configs/china_fridge_classes_v1.json
-```
+Only raw-produce training/evaluation data is kept outside the repository:
 
-Result:
-
-```text
-71 classes
-train: 10,532 images / 195,071 boxes
-val:    1,172 images /  23,972 boxes
-test:   2,315 images /  27,848 boxes
-```
-
-FoodInsSeg is **CC BY-NC-SA 4.0, non-commercial research only**; see
-`THIRD_PARTY_NOTICES.md`. Images/labels stay outside the repository.
-
-Train with:
-
-```powershell
-python scripts/train_detector.py `
-  --model weights/yolov8s.pt `
-  --data E:\fridge-keeper-datasets\datasets\china_fridge_v1\data.yaml `
-  --epochs 20 --imgsz 640 --batch 8 --device 0 --amp `
-  --name china_fridge_v1_baseline
-```
-
-Evaluate the held-out test split:
-
-```powershell
-python scripts/evaluate_unified.py `
-  --weights runs/china_fridge_v1_v2/weights/best.pt `
-  --split test
-```
-
-The 20-epoch baseline reached 74.0% recall / 79.1% class accuracy on the 180
-LVIS test images, and 53.3% / 80.0% on the 2,135 FoodInsSeg test images. It adds
-meat/egg/tofu classes but those are still weak; see
-`outputs/china_fridge_v1_test_report.md`.
-
-### Produce-only follow-up
-
-Filter the merged set back to the 47 produce classes:
-
-```powershell
-python scripts/build_produce_dataset.py `
-  --source E:\fridge-keeper-datasets\datasets\china_fridge_v1 `
-  --weights weights/fruits_vegetables_yolov8s_cn_v2.pt `
-  --output E:\fridge-keeper-datasets\datasets\china_fridge_produce_v1
-```
-
-Fine-tune from v2 for 15 epochs, then evaluate on the held-out test split:
-
-```powershell
-python scripts/train_detector.py `
-  --model weights/fruits_vegetables_yolov8s_cn_v2.pt `
-  --data E:\fridge-keeper-datasets\datasets\china_fridge_produce_v1\data.yaml `
-  --epochs 15 --imgsz 640 --batch 8 --device 0 --amp `
-  --name china_fridge_produce_v3
-
-python scripts/evaluate_unified.py `
-  --dataset E:\fridge-keeper-datasets\datasets\china_fridge_produce_v1 `
-  --weights runs/china_fridge_produce_v3/weights/best.pt --split test
-```
-
-v3 raises combined-test class accuracy from 71.9% to 86.3% and lowers false
-positives from 7.26 to 5.54, but is about 1.4 points lower on the 180 LVIS
-images. Keep v2 as serving default until a real-fridge test; see
-`outputs/produce_v3_test_report.md`.
-
-### Crop classifier upper bound (negative result)
-
-A 45-class ResNet18 was trained on 37,476 GT-box crops. Test Top-1 was only
-55.7% (Top-3 75.0%), far below the detector's 86.3% class accuracy on matched
-boxes. Do not integrate this crop stage; see
-`outputs/crop_classifier_report.md`.
-
-### Recall tuning
-
-The previous 0.15 confidence missed too many objects. On the held-out test set:
-
-| Setting | Recall | End-to-end | FP/image |
-| --- | ---: | ---: | ---: |
-| conf 0.15 | 61.0% | 52.7% | 5.54 |
-| conf 0.10 + agnostic NMS | 67.4% | 57.4% | 7.40 |
-| conf 0.10 + agnostic NMS + TTA | **73.9%** | **62.2%** | 10.17 |
-| conf 0.05 + agnostic NMS | 75.3% | 62.9% | 12.36 |
-
-Recall-first setting: conf 0.10, agnostic NMS, TTA. Higher input sizes
-(960/1280) did not help. Do not auto-count at low thresholds; exact count is
-only 14—19%. See `outputs/produce_recall_report.md`.
-
-Simple tiling was worse (66.9% recall, 11.0 FP/image on a 500-image subset), and
-a v2+v3 union reached 78.9% recall but 15.2 FP/image at conf 0.10. Neither is a
-default; TTA is the better recall-first trade-off.
-
+`fruits_vegetables_lvis_full` and `fruits_vegetables_lvis_eval_v1`.
 
 ## Chinese Fridge Catalog
 
@@ -193,7 +100,7 @@ Serving-time labels are standardized by:
 configs/china_fridge_catalog_v1.json
 ```
 
-The catalog contains 104 common ingredients normally stored in Chinese
+The catalog contains 79 common ingredients normally stored in Chinese
 households' refrigerators or freezers. It provides:
 
 - Chinese display names
