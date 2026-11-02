@@ -138,6 +138,22 @@ retains source data. Candidate weights:
 `runs/raw_mixed_v1/weights/best.pt`; the serving default remains v2 until a
 Chinese countertop test. See `outputs/intali_report.md`.
 
+### Single-item classifier (Fruits-360 + IntAli)
+
+A compact 100x100 Fruits-360 version (398 MB) was filtered to 30 supported
+classes: 42,818 train / 4,727 val / 15,906 test images.
+
+| Test | Model | Top-1 | Top-3 |
+| --- | --- | ---: | ---: |
+| Fruits-360 white background | Fruits-only | 98.9% | 99.5% |
+| IntAli real-background crops | Fruits-only | 29.7% | 52.3% |
+| IntAli real-background crops | + IntAli fine-tune | **94.9%** | **98.3%** |
+
+White-background training alone does not transfer. Domain fine-tuning fixes
+most of the gap, but this is a 30-class classifier; leafy greens and other
+missing classes still need the detector/manual fallback. End-to-end integration
+is pending. See `outputs/fruits360_classifier_report.md`.
+
 ## Chinese Fridge Catalog
 
 Serving-time labels are standardized by:
