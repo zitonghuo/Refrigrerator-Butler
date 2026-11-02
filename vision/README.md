@@ -92,6 +92,15 @@ Only raw-produce training/evaluation data is kept outside the repository:
 
 `fruits_vegetables_lvis_full` and `fruits_vegetables_lvis_eval_v1`.
 
+### COCO supplement (negative result)
+
+975 COCO raw-produce images (apple, banana, orange, broccoli, carrot) were added
+to LVIS; COCO images containing pizza, sandwiches, hot dogs, donuts or cake were
+excluded. Fine-tuning v2 on the merged set did not improve the LVIS held-out
+test: with 15 epochs, v2 stayed at 72.1% recall / 59.6% end-to-end, while the
+supplemented model reached 67.3% / 54.4% (or 72.9% / 57.9% at conf 0.10).
+Keep v2; see `outputs/raw_produce_coco_report.md`.
+
 ## Chinese Fridge Catalog
 
 Serving-time labels are standardized by:
