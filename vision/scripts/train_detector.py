@@ -36,6 +36,7 @@ def main() -> int:
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--mixup", type=float, default=0.0)
     parser.add_argument("--scale", type=float, default=0.5)
+    parser.add_argument("--style-augment", action="store_true")
     args = parser.parse_args()
 
     model = YOLO(str(args.model))
@@ -55,8 +56,14 @@ def main() -> int:
         amp=args.amp,
         lr0=args.lr0,
         freeze=args.freeze,
-        mixup=args.mixup,
-        scale=args.scale,
+        mixup=(0.2 if args.style_augment else args.mixup),
+        scale=(0.7 if args.style_augment else args.scale),
+        **(dict(
+            hsv_h=0.03, hsv_s=0.9, hsv_v=0.6,
+            degrees=15, translate=0.2, shear=3,
+            perspective=0.001, flipud=0.1, fliplr=0.5,
+            mosaic=1.0, erasing=0.4, close_mosaic=10,
+        ) if args.style_augment else {}),
     )
     return 0
 

@@ -104,8 +104,14 @@ def main():
         add(image, args.lvis / "labels" / "train" / (image.stem + ".txt"), split, "lvis")
     for image in sorted((args.lvis / "images" / "test").glob("*.*")):
         add(image, args.lvis / "labels" / "test" / (image.stem + ".txt"), "test", "lvis")
-    for image in sorted((args.coco / "images").glob("*.*")):
-        add(image, args.coco / "labels" / (image.stem + ".txt"), "train", {n: COCO_TO[n] for n in COCO})
+    coco_images = sorted((args.coco / "images").glob("*.*"))
+    rng.shuffle(coco_images)
+    coco_test = coco_images[: max(1, len(coco_images) // 7)]
+    coco_val = coco_images[len(coco_test): len(coco_test) + max(1, len(coco_images) // 7)]
+    coco_train = coco_images[len(coco_test) + len(coco_val):]
+    for split, items in (("test", coco_test), ("val", coco_val), ("train", coco_train)):
+        for image in items:
+            add(image, args.coco / "labels" / (image.stem + ".txt"), split, {n: COCO_TO[n] for n in COCO})
 
     for split in ("train", "val", "test"):
         images = list((args.output / "images" / split).glob("*.*"))

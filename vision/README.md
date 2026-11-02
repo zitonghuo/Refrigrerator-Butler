@@ -101,6 +101,23 @@ test: with 15 epochs, v2 stayed at 72.1% recall / 59.6% end-to-end, while the
 supplemented model reached 67.3% / 54.4% (or 72.9% / 57.9% at conf 0.10).
 Keep v2; see `outputs/raw_produce_coco_report.md`.
 
+### Cross-style test (LVIS vs COCO)
+
+A held-out 322-image cross-style test was built from LVIS (180) and COCO (142)
+raw produce; COCO images used for testing were not in training.
+
+| Test style | Model | Recall | Class | End-to-end | FP/image |
+| --- | --- | ---: | ---: | ---: | ---: |
+| LVIS | v2 | 72.1% | 82.6% | 59.6% | 10.03 |
+| COCO | v2 | 51.6% | 91.3% | 47.1% | 24.24 |
+| LVIS | v2 + style aug | 66.2% | 76.4% | 50.6% | 8.28 |
+| COCO | v2 + style aug | 52.9% | 93.7% | 49.5% | 24.18 |
+
+The COCO style is clearly harder for v2. Strong colour/geometry augmentation
+improved COCO end-to-end by only 2.4 points while dropping LVIS by 9 points, so
+it is not adopted. Multi-style real photos are still needed; see
+`outputs/cross_style_report.md`.
+
 ## Chinese Fridge Catalog
 
 Serving-time labels are standardized by:
