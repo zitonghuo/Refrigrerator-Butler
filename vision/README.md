@@ -138,6 +138,23 @@ retains source data. Candidate weights:
 `runs/raw_mixed_v1/weights/best.pt`; the serving default remains v2 until a
 Chinese countertop test. See `outputs/intali_report.md`.
 
+### YOLOv8m-seg on IntAli (teacher recommendation)
+
+IntAli's instance masks were converted to YOLO-seg labels and used to fine-tune
+YOLOv8m-seg (640, 20 epochs, frozen first 10 layers).
+
+| Test | Model | Recall | Class | End-to-end | FP/image |
+| --- | --- | ---: | ---: | ---: | ---: |
+| IntAli | mixed YOLOv8s | 91.0% | 91.0% | 82.8% | 1.52 |
+| IntAli | **YOLOv8m-seg** | **91.6%** | **94.6%** | **86.6%** | **0.48** |
+| LVIS | YOLOv8m-seg | 5.6% | 65.9% | 3.7% | 0.67 |
+| COCO | YOLOv8m-seg | 17.5% | 86.4% | 15.1% | 1.14 |
+
+The segmentation model is the best target-style result so far, but training on
+IntAli alone causes severe source forgetting. Candidate weights:
+`runs/intali_seg_v1_yolov8m/weights/best.pt`; serving default remains v2. See
+`outputs/yolov8m_seg_report.md`.
+
 ### Single-item classifier (Fruits-360 + IntAli)
 
 A compact 100x100 Fruits-360 version (398 MB) was filtered to 30 supported
