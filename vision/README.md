@@ -162,6 +162,15 @@ inference. Candidate weights:
 An IntAli-only m-seg model reached 86.6% end-to-end but forgot LVIS almost
 entirely; the mixed model is the better replacement candidate.
 
+### Automatic clean filter (negative result)
+
+Removing prepared/processed categories left 557 train / 164 test images.
+The clean-trained m-seg fell to 78.5% end-to-end on the clean test and 77.5% on
+the full IntAli test, below the current 85.2% / 86.6%. The loss of half the
+training data hurt more than cooked-dish noise. Do not adopt the clean filter;
+add clean tabletop/fridge photos instead of deleting existing images. See
+`outputs/clean_filter_report.md`.
+
 ### Single-item classifier (Fruits-360 + IntAli)
 
 A compact 100x100 Fruits-360 version (398 MB) was filtered to 30 supported

@@ -55,6 +55,10 @@ def main():
                 p = line.split()
                 if len(p) == 5:
                     gt.append((label_names[int(p[0])], xyxy(list(map(float, p[1:])))))
+                elif len(p) >= 7:
+                    values = list(map(float, p[1:]))
+                    xs, ys = values[0::2], values[1::2]
+                    gt.append((label_names[int(p[0])], (min(xs), min(ys), max(xs), max(ys))))
         result = recognizer.predict_image(image)
         preds = [(c.label, [c.bbox_xyxy[0] / result.image_width, c.bbox_xyxy[1] / result.image_height,
                             c.bbox_xyxy[2] / result.image_width, c.bbox_xyxy[3] / result.image_height], c.confidence)
