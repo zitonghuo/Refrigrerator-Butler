@@ -162,6 +162,14 @@ inference. Candidate weights:
 An IntAli-only m-seg model reached 86.6% end-to-end but forgot LVIS almost
 entirely; the mixed model is the better replacement candidate.
 
+### Offline augmentation (negative result)
+
+Expanding IntAli train 3x with flip, ±12° rotation, colour/brightness and blur
+gave 91.4% / 93.2% / 85.2% on IntAli, slightly below the unaugmented 91.6% /
+94.6% / 86.6%. The copies add no new scenes, so they do not improve
+generalization. Do not adopt; AICook or real tabletop/fridge photos are needed.
+See `outputs/augmentation_report.md`.
+
 ### Automatic clean filter (negative result)
 
 Removing prepared/processed categories left 557 train / 164 test images.
