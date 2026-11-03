@@ -151,8 +151,10 @@ classes: 42,818 train / 4,727 val / 15,906 test images.
 
 White-background training alone does not transfer. Domain fine-tuning fixes
 most of the gap, but this is a 30-class classifier; leafy greens and other
-missing classes still need the detector/manual fallback. End-to-end integration
-is pending. See `outputs/fruits360_classifier_report.md`.
+missing classes still need the detector/manual fallback. End-to-end fusion was
+tested: blind replacement dropped IntAli end-to-end from 82.75% to 74.77%; a
+conservative low-confidence rule reached only 83.10%. Fusion is not integrated.
+See `outputs/fruits360_classifier_report.md` and `outputs/fusion_report.md`.
 
 ## Chinese Fridge Catalog
 
