@@ -138,22 +138,29 @@ retains source data. Candidate weights:
 `runs/raw_mixed_v1/weights/best.pt`; the serving default remains v2 until a
 Chinese countertop test. See `outputs/intali_report.md`.
 
-### YOLOv8m-seg on IntAli (teacher recommendation)
+### YOLOv8m-seg vs YOLOv8s (fair comparison)
 
-IntAli's instance masks were converted to YOLO-seg labels and used to fine-tune
-YOLOv8m-seg (640, 20 epochs, frozen first 10 layers).
+Both models were trained from COCO weights on the same mixed data, same 15
+epochs, 640 input, batch 8, first 10 layers frozen, lr 0.001. IntAli masks are
+used for m-seg; LVIS/COCO boxes are converted to rectangular polygons.
 
 | Test | Model | Recall | Class | End-to-end | FP/image |
 | --- | --- | ---: | ---: | ---: | ---: |
-| IntAli | mixed YOLOv8s | 91.0% | 91.0% | 82.8% | 1.52 |
-| IntAli | **YOLOv8m-seg** | **91.6%** | **94.6%** | **86.6%** | **0.48** |
-| LVIS | YOLOv8m-seg | 5.6% | 65.9% | 3.7% | 0.67 |
-| COCO | YOLOv8m-seg | 17.5% | 86.4% | 15.1% | 1.14 |
+| IntAli | YOLOv8s | 89.8% | 90.2% | 81.0% | 1.08 |
+| IntAli | **YOLOv8m-seg** | **91.1%** | **93.3%** | **85.0%** | **0.80** |
+| LVIS | YOLOv8s | 46.5% | 70.3% | **32.7%** | **5.23** |
+| LVIS | YOLOv8m-seg | **47.8%** | 66.5% | 31.8% | 5.37 |
+| COCO | YOLOv8s | 50.6% | 90.1% | 45.6% | **20.36** |
+| COCO | **YOLOv8m-seg** | **53.7%** | **93.2%** | **50.1%** | 21.34 |
 
-The segmentation model is the best target-style result so far, but training on
-IntAli alone causes severe source forgetting. Candidate weights:
-`runs/intali_seg_v1_yolov8m/weights/best.pt`; serving default remains v2. See
-`outputs/yolov8m_seg_report.md`.
+m-seg is +4.0 points end-to-end on IntAli and +4.5 on COCO, with a slight LVIS
+trade-off (-0.9). Cost: 52.3 MB vs 21.5 MB, ~6.2 ms vs ~2.0 ms validation
+inference. Candidate weights:
+`runs/fair_v8mseg_mixed_15e/weights/best.pt`; see
+`outputs/fair_v8s_vs_v8mseg.md`.
+
+An IntAli-only m-seg model reached 86.6% end-to-end but forgot LVIS almost
+entirely; the mixed model is the better replacement candidate.
 
 ### Single-item classifier (Fruits-360 + IntAli)
 
