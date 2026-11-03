@@ -45,7 +45,7 @@ MAP = {
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--source", type=Path, default=Path(r"E:\fridge-keeper-datasets\kagglehub\datasets\miketrs\intali-food-dataset\versions\1"))
+    parser.add_argument("--source", type=Path, default=Path(r"C:\Users\ALIENWARE\.cache\kagglehub\datasets\miketrs\intali-food-dataset\versions\1"))
     parser.add_argument("--weights", type=Path, default=Path("weights/fruits_vegetables_yolov8s_cn_v2.pt"))
     parser.add_argument("--output", type=Path, default=Path(r"E:\fridge-keeper-datasets\datasets\intali_produce_v1"))
     args = parser.parse_args()

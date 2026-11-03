@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Download the compact Fruits-360 100x100 dataset via kagglehub."""
-import os
-os.environ.setdefault("KAGGLEHUB_CACHE", r"E:\fridge-keeper-datasets\kagglehub")
 from kagglehub import dataset_download
 
 
