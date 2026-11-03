@@ -1,10 +1,11 @@
+const { units, suggestedUnit, prepareFood } = require('../../utils/food-units');
 const api = require('../../utils/api');
 const config = require('../../config');
 const parseLabel = require('../../utils/label-parser');
 const vision = require('../../utils/vision');
 const invoke = (method, options) => new Promise((resolve, reject) => wx[method]({ ...options, success: resolve, fail: reject }));
 Page({
-  data: { cloudEnabled: config.mediaCloudEnabled === true, visionEnabled: vision.enabled(), loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
+  data: { units, locations: ['冷藏','冷冻','常温'], cloudEnabled: config.mediaCloudEnabled === true, visionEnabled: vision.enabled(), loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
   onLoad(query) { this.setData({ itemId: query.itemId || '' }); },
   onShow() { this.refresh(); },
   onHide() { this.setData({ preview: null }); },
@@ -90,19 +91,36 @@ Page({
       const id = e.currentTarget.dataset.id;
       this.setData({ selected: id, status: '正在识别画面里的食材…', suggestion: null, foods: null, confirmed: false });
       const result = await api.call('media.recognize', { id });
-      this.setData({ foods: result.candidates, status: result.candidates.length ? '识别完成，请核对后带入入库表单。' : '没有识别到食材，可以手动填写或换一张照片。' });
+      this.setData({ foods: result.candidates.map(prepareFood), status: result.candidates.length ? '识别完成，可在下方修改或移除食材。' : '没有识别到食材，可以手动填写或换一张照片。' });
     });
   },
-  recognizeGlm() {
+  recognizeGlm(event) {
+    const receipt = event?.currentTarget?.dataset?.kind === 'receipt';
     const local=this.data.local;if(!local||local.kind!=='image')return;
     return api.run(this,async()=>{
+      if (receipt) {
+        this.setData({ foods:null, suggestion:null, selected:'', confirmed:false, status:'正在读取小票原文…' });
+        let rows;
+        try { rows = await require('../../utils/receipt-ocr').recognizeReceipt(local.path); } catch { rows = []; }
+        if (rows.length) {
+          this.setData({ foods:rows, status:'请对照每项下方的票面文字，补全漏字后再入库。' });
+          return;
+        }
+        this.setData({ status:'本机未读到商品行，可继续尝试云端转录。' });
+      }
       if(!await api.ensure())return;
       const ready=await api.call('vision.status');if(!ready.ready)throw Error('智谱照片识别尚未配置，暂时可以手动录入。');
-      const consent=await invoke('showModal',{title:'使用智谱识别照片',content:'本次压缩照片将经微信云函数发送给智谱开放平台（GLM-4V-Flash）处理。请避开人脸、证件等个人信息。识别可能出错，数量和日期需自行填写。是否发送？',confirmText:'同意发送'});
+      const consent=await invoke('showModal',{title:receipt ? '识别小票商品名' : '使用智谱识别照片',content:(receipt ? '建议仅保留商品明细，遮住会员号和支付信息。' : '') + '本次压缩照片将经微信云函数发送给智谱开放平台（GLM-4V-Flash）处理。请避开人脸、证件等个人信息。识别可能出错，数量和日期需自行填写。是否发送？',confirmText:'同意发送'});
       if(!consent.confirm)return;
       this.setData({foods:null,suggestion:null,selected:'',confirmed:false,status:'正在识别，最多等待约半分钟…'});
-      const foods=await require('../../utils/glm-vision').recognize(local.path,ready.consentVersion);
-      this.setData({foods,status:foods.length?'请核对名称，数量、日期和存放位置需自行确认。':'未识别到明确食材，请手动填写。'});
+      let foods;
+      try {
+        foods = await require('../../utils/glm-vision').recognize(local.path, ready.consentVersion, receipt ? 'receipt' : 'photo');
+      } catch (error) {
+        this.setData({ status: '' });
+        throw error instanceof Error ? error : Error('照片处理失败，请重新选择照片。');
+      }
+      this.setData({foods:foods.map(prepareFood),status:foods.length?'请核对名称，数量、日期和存放位置需自行确认。':(receipt ? '未读到商品名，可裁剪商品明细区域后再试。' : '未识别到明确食材，请手动填写。')});
     });
   },
   recognizeLocal() {
@@ -112,29 +130,50 @@ Page({
       const consent=await invoke('showModal',{title:'发送照片进行识别',content:'这张照片将发送到开发者配置的本机识别服务。是否继续？',confirmText:'发送识别'});if(!consent.confirm)return;
       this.setData({ status: '正在用本机模型识别…', foods: null, suggestion: null, confirmed: false });
       const foods = await vision.recognize(local.path);
-      this.setData({ foods, status: foods.length ? '识别完成，请核对后带入入库表单。' : '没有识别到食材，可以手动填写或换一张照片。' });
+      this.setData({ foods: foods.map(prepareFood), status: foods.length ? '识别完成，可在下方修改或移除食材。' : '没有识别到食材，可以手动填写或换一张照片。' });
     });
   },
+ chooseUnit(e) {
+   const index = e.currentTarget.dataset.index;
+   const path = 'foods[' + index + ']';
+   this.setData({ [path + '.unit']: units[Number(e.detail.value)], [path + '.unitChosen']: true, confirmed: false });
+
+ },
+  changeFood(e) {
+    const { index, field } = e.currentTarget.dataset;
+    const value = field === 'location' ? this.data.locations[Number(e.detail.value)] : e.detail.value;
+    const path = 'foods[' + index + ']';
+    const change = { [path + '.' + field]: value, confirmed: false, error: '' };
+    if (field === 'unit') change[path + '.unitChosen'] = true;
+    if (field === 'name' && !this.data.foods[index].unitChosen) change[path + '.unit'] = suggestedUnit(value);
+    this.setData(change);
+  },
+  clearFoodDate(e) {
+    this.setData({ ['foods[' + e.currentTarget.dataset.index + '].expiry']: '', confirmed: false });
+  },
+  removeFood(e) {
+    const foods = this.data.foods.filter((_, index) => index !== Number(e.currentTarget.dataset.index));
+    this.setData({ foods, confirmed: false, error: '', status: foods.length ? '' : '已移除全部候选食材。' });
+  },
   useFoods() {
-    if(!this.data.confirmed){this.setData({error:'请先核对候选名称。'});return;}
-    const auth = api.current(); if (!auth || !this.data.foods || !this.data.foods.length) return;
-    const existing = wx.getStorageSync('add-draft-v2');
-    let rows = existing && existing.uid === auth.user.id && existing.homeId === auth.user.homeId ? existing.rows : [];
-    // A photo can only be bound to the first new batch; further candidates are manual rows.
-    const photo = this.data.items.find(i => i.id === this.data.selected);
-    rows = rows.filter(row => (row.name || row.mediaId) && row.mediaId !== this.data.selected);
-    if (rows.length + this.data.foods.length > 20) { this.setData({ error: '草稿最多 20 项，请先保存已有食材。' }); return; }
-    this.data.foods.forEach((food, index) => rows.push({
-      name: food.name,
-      quantity: food.quantity ? String(food.quantity) : '',
-      unit: food.unit,
-      location: food.location,
-      expiry: food.expiry,
-      source: food.source,
-      ...(photo && !photo.itemId && index === 0 ? { mediaId: photo.id } : {})
-    }));
-    wx.setStorageSync('add-draft-v2', { uid: auth.user.id, homeId: auth.user.homeId, rows });
-    wx.redirectTo({ url: '/pages/add/add' });
+    return api.run(this, async () => {
+      const foods = this.data.foods || [];
+      if (!foods.length || !this.data.confirmed) return;
+      const photo = this.data.items.find(item => item.id === this.data.selected);
+      const items = foods.map((food, index) => {
+        const name = (food.name || '').trim();
+        if (!name || !(Number(food.quantity) > 0) || !(food.unit || '').trim()) {
+          throw Error('请在本页补全第 ' + (index + 1) + ' 项的名称、数量和单位。');
+        }
+        return { name, quantity: food.quantity, unit: food.unit.trim(), location: food.location,
+          expiry: food.expiry || '', source: food.source || 'manual',
+          ...(index === 0 && photo && !photo.itemId ? { mediaId: photo.id } : {}) };
+      });
+      if (!await api.ensure()) return;
+      await api.write('item.add', { items });
+      this.setData({ foods: null, confirmed: false, status: '已将 ' + items.length + ' 项食材加入冰箱。' });
+      wx.showToast({ title: '已入库' });
+    });
   },
   field(e) { this.setData({ ['suggestion.' + e.currentTarget.dataset.field]: e.detail.value, confirmed: false }); },
   agreement(e) { this.setData({ confirmed: e.detail.value.includes('checked') }); },
@@ -148,7 +187,7 @@ Page({
     if (rows.length >= 20) { this.setData({ error: '草稿已满 20 项，请先保存已有食材。' }); return; }
     // Existing item photos are for reference; only unbound photos can become new batches.
     const photo = this.data.items.find(i => i.id === this.data.selected);
-    rows.push({ name: s.name, quantity: '1', unit: '个', location: '冷藏', expiry: s.expiry, source: 'label', ...(photo && !photo.itemId ? { mediaId: photo.id } : {}) });
+    rows.push({ name: s.name, quantity: '1', unit: suggestedUnit(s.name), location: '冷藏', expiry: s.expiry, source: 'label', ...(photo && !photo.itemId ? { mediaId: photo.id } : {}) });
     wx.setStorageSync('add-draft-v2', { uid: auth.user.id, homeId: auth.user.homeId, rows });
     wx.redirectTo({ url: '/pages/add/add' });
   },

@@ -4,8 +4,25 @@ function fail(code, message) { const error = new Error(message); error.code = co
 async function call(action, data = {}, key) {
   if (!config.cloudEnv) throw fail('NOT_CONFIGURED', '云服务尚未部署，请开发者先配置云环境。');
   let response;
-  try { response = await wx.cloud.callFunction({ name: config.functionName, data: { action, data, ...(key ? { key } : {}) }, config: { env: config.cloudEnv } }); }
-  catch (error) { throw fail('NETWORK', '连接未完成，请检查网络后重试。已提交的操作会按原请求核对。'); }
+  try {
+    response = await wx.cloud.callFunction({
+      name: config.functionName,
+      data: { action, data, ...(key ? { key } : {}) },
+      config: { env: config.cloudEnv },
+      ...(action === 'vision.recognize' ? { slow: true } : {})
+    });
+  } catch (error) {
+    if (action === 'vision.recognize') {
+      const code = String(error && error.errCode);
+      const detail = /^-?\d{1,10}$/.test(code) ? '（微信错误码 ' + code + '）' : '';
+      const diagnostic = String(error && (error.errMsg || error.message) || '');
+      const reason = /too large|exceed.*size|payload.*limit/i.test(diagnostic) ? '照片请求过大'
+        : /time.?out|timed out|超时/i.test(diagnostic) ? '识别请求超时' : '未收到识别结果';
+      const trace = diagnostic.match(/\b(?:callId|requestId)\s*[:=]\s*([A-Za-z0-9.-]{6,80})/i);
+      throw fail('NETWORK', reason + detail + '。' + (trace ? '排查编号 ' + trace[1] : '请稍后重试。'));
+    }
+    throw fail('NETWORK', '连接未完成，请检查网络后重试。已提交的操作会按原请求核对。');
+  }
   const result = response.result;
   if (!result || !result.ok) throw fail(result && result.error ? result.error.code : 'INTERNAL', result && result.error ? result.error.message : '服务返回异常');
   return result.data;

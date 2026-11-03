@@ -1,1 +1,2 @@
 .media-image,.media-video{width:100%;border-radius:16rpx}.media-video{height:400rpx}.ocr-text{display:block;white-space:pre-wrap;padding:20rpx;background:#f2f6fa;font-size:24rpx;max-height:400rpx;overflow:auto;margin:20rpx 0}checkbox-group{font-size:26rpx;margin:24rpx 0}
+.food-row{padding:24rpx 0;border-bottom:1rpx solid #e0e8ec}

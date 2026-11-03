@@ -12,8 +12,12 @@ test('GLM only returns names, discarding invented quantity/date/confidence',asyn
 test('GLM rejects no consent and invalid images before provider',async()=>{const f=setup();assert.equal((await f.run({...f.event,data:{...f.event.data,consentVersion:''}},{})).ok,false);assert.equal((await f.run({...f.event,data:{...f.event.data,imageBase64:'https://evil'}},{})).ok,false);assert.equal(f.calls(),0);});
 test('GLM session and server switch gate image transmission',async()=>{const f=setup({env:{}});assert.equal((await f.run(f.event,{})).error.code,'VISION_SETUP');const g=setup({service:async()=>({ok:false,error:{code:'UNAUTHENTICATED'}})});assert.equal((await g.run(g.event,{})).ok,false);assert.equal(g.calls(),0);});
 test('GLM concurrent requests are rate limited atomically',async()=>{const f=setup();const r=await Promise.all([f.run(f.event,{}),f.run(f.event,{})]);assert.equal(r.filter(x=>x.ok).length,1);assert.equal(f.calls(),1);});
-test('GLM upstream errors never expose credentials and malformed JSON is rejected',async()=>{const f=setup({request:async()=>{throw Error('secret credential')}});const r=await f.run(f.event,{});assert.equal(r.error.code,'VISION_FAILED');assert.equal(JSON.stringify(r).includes('secret'),false);assert.throws(()=>parse('not JSON'));assert.deepEqual(parse('{"candidates":[]}'),[]);});
-test('GLM filters rare non-Chinese foods from free-text candidates',()=>{const out=parse(JSON.stringify({candidates:[{name:'鹰嘴豆'},{name:'塔可'},{name:'Taco'},{name:'苹果'}]}));assert.deepEqual(out.map(x=>x.name),['苹果']);});
+test('GLM upstream errors never expose credentials and malformed JSON is rejected',async()=>{const f=setup({request:async()=>{throw Error('secret credential')}});const r=await f.run(f.event,{});assert.equal(r.error.code,'VISION_CONNECTION');assert.equal(JSON.stringify(r).includes('secret'),false);assert.throws(()=>parse('not JSON'));assert.deepEqual(parse('{"candidates":[]}'),[]);});
+
+test('mixed food lists preserve distinct names and omit duplicate entries', () => {
+  const response = '识别结果\n```json\n["卷心菜",{"name":"蘑菇"},"卷心菜",{"name":"洋葱"}]\n```';
+  assert.deepEqual(parse(response).map(item => item.name), ['卷心菜', '蘑菇', '洋葱']);
+});
 
 test('GLM initializes and reports disabled on Node 16 without fetch or AbortSignal',async()=>{
  const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
@@ -22,3 +26,10 @@ test('GLM initializes and reports disabled on Node 16 without fetch or AbortSign
  const run=mod.exports.createVision({store:{},service:async()=>({ok:true,data:{user:{id:'u'}}})});
  const result=await run({action:'vision.status'},{});assert.equal(result.ok,true);assert.equal(result.data.ready,false);
 });
+const { receiptRows } = require('../miniprogram/utils/receipt-ocr');
+test('receipt rows keep printed words, exclude price lines and split OCR-fragmented item codes', () => {
+  const lines = ['品名 数量 单价 小计', '22014100 1804 莲藕', '0.378 4.76 1.80', '2201176005709油菜苔', '2201120006509黄瓜', '合计 82.10'];
+  assert.deepEqual(receiptRows(lines).map(row => row.name), ['莲藕','油菜苔','黄瓜']);
+});
+
+test('GLM filters rare non-Chinese foods from free-text candidates',()=>{const out=parse(JSON.stringify({candidates:[{name:'鹰嘴豆'},{name:'塔可'},{name:'Taco'},{name:'苹果'}]}));assert.deepEqual(out.map(x=>x.name),['苹果']);});

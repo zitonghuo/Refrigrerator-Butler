@@ -16,6 +16,7 @@
     <button wx:if="{{cloudEnabled}}" bindtap="upload" loading="{{busy}}" disabled="{{busy}}">上传并保存</button>
     <button wx:if="{{!cloudEnabled && visionEnabled}}" bindtap="recognizeLocal" loading="{{busy}}" disabled="{{busy}}">用本机模型识别</button>
     <button wx:if="{{local.kind==='image'}}" bindtap="recognizeGlm" loading="{{busy}}" disabled="{{busy}}">智谱识别食材</button>
+    <button wx:if="{{local.kind==='image'}}" data-kind="receipt" bindtap="recognizeGlm" loading="{{busy}}" disabled="{{busy}}">识别小票商品名</button>
     <button class="secondary" bindtap="saveLocal" disabled="{{busy}}">保存到手机相册</button><button class="secondary" bindtap="clearLocal" disabled="{{busy}}">清除本次预览</button>
   </view>
   <view class="detail">{{status}}</view>
@@ -35,14 +36,17 @@
   </view>
   <view wx:if="{{foods}}" class="panel">
     <view class="section-title">画面里的食材（{{foods.length}}）</view>
-    <view wx:for="{{foods}}" wx:key="index" class="row">
-      <view class="name">{{item.name}}</view>
-      <view class="detail">{{item.quantity ? item.quantity : '数量待补'}} {{item.unit}} · {{item.location}} · {{item.expiry || '日期待补'}}<text wx:if="{{item.confidence}}"> · 置信度 {{item.confidence}}</text></view>
+    <view wx:for="{{foods}}" wx:key="index" class="food-row">
+      <view wx:if="{{item.receiptLine}}" class="detail">票面文字：{{item.receiptLine}}</view><view wx:if="{{item.receiptLine && item.name.length === 1}}" class="detail">可能漏字，请对照照片补全。</view><view class="heading"><view class="label">食材 {{index+1}}</view><button class="text-button danger" data-index="{{index}}" bindtap="removeFood" disabled="{{busy}}">移除</button></view>
+      <view class="label">名称</view><input value="{{item.name}}" maxlength="80" placeholder="修改食材名称" data-index="{{index}}" data-field="name" bindinput="changeFood" disabled="{{busy}}"/>
+      <view class="row"><view class="field"><view class="label">数量</view><input type="digit" value="{{item.quantity || ''}}" placeholder="填写数量" data-index="{{index}}" data-field="quantity" bindinput="changeFood" disabled="{{busy}}"/></view>
+      <view class="field"><view class="label">单位</view><picker range="{{units}}" data-index="{{index}}" bindchange="chooseUnit" disabled="{{busy}}"><view class="picker">{{item.unit || '选单位'}} ▾</view></picker><input placeholder="或输入自定义单位" value="{{item.unit}}" maxlength="12" data-index="{{index}}" data-field="unit" bindinput="changeFood" disabled="{{busy}}"/></view></view>
+      <picker range="{{locations}}" value="{{item.location === '冷冻' ? 1 : item.location === '常温' ? 2 : 0}}" data-index="{{index}}" data-field="location" bindchange="changeFood" disabled="{{busy}}"><view class="picker">存放位置<text>{{item.location}} ›</text></view></picker>
+      <picker mode="date" value="{{item.expiry}}" data-index="{{index}}" data-field="expiry" bindchange="changeFood" disabled="{{busy}}"><view class="picker">到期日期<text>{{item.expiry || '选填'}} ›</text></view></picker>
+      <button wx:if="{{item.expiry}}" class="text-button" data-index="{{index}}" bindtap="clearFoodDate" disabled="{{busy}}">清除日期</button>
     </view>
-    <view wx:if="{{!foods.length}}" class="detail">没有识别到食材，可以手动填写或换一张照片。</view>
-    <checkbox-group wx:if="{{foods.length}}" bindchange="agreement"><label><checkbox value="checked" checked="{{confirmed}}"/>我已核对候选名称，入库前补全数量和日期</label></checkbox-group>
-    <button wx:if="{{foods.length}}" bindtap="useFoods" disabled="{{busy || !confirmed}}">全部带入入库表单</button>
-    <view class="detail">识别结果只是建议，不会自动入库；数量和日期请核对后再保存。</view>
+    <checkbox-group wx:if="{{foods.length}}" bindchange="agreement"><label><checkbox value="checked" checked="{{confirmed}}" disabled="{{busy}}"/>我已核对以上食材</label></checkbox-group>
+    <button wx:if="{{foods.length}}" bindtap="useFoods" loading="{{busy}}" disabled="{{busy || !confirmed}}">确认入库 · {{foods.length}} 项</button>
   </view>
   <button wx:if="{{!cloudEnabled}}" class="secondary" bindtap="manual" disabled="{{busy}}">手动添加食材</button>
   <view wx:if="{{cloudEnabled}}" class="section-title">{{itemId?'这份食材的附件':'家庭照片与视频'}}</view>
