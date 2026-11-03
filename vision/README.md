@@ -156,6 +156,12 @@ tested: blind replacement dropped IntAli end-to-end from 82.75% to 74.77%; a
 conservative low-confidence rule reached only 83.10%. Fusion is not integrated.
 See `outputs/fruits360_classifier_report.md` and `outputs/fusion_report.md`.
 
+An agreement gate was evaluated instead: auto-submit only when detector and
+classifier agree (classifier ≥0.9) gives 83.1% precision but auto-submits only
+59.3% of GT; disagreements contain the right answer 98.6% of the time. This is a
+precision/UX strategy, not an accuracy improvement. See
+`outputs/agreement_report.md`.
+
 ## Chinese Fridge Catalog
 
 Serving-time labels are standardized by:
