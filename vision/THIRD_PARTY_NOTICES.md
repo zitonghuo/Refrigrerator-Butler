@@ -28,6 +28,13 @@ smoke testing.
 - Attribution and share-alike terms apply to derived material; do not use this
   model commercially without checking the dataset licence.
 
+## AICook
+
+- Dataset: https://universe.roboflow.com/karel-cornelis-q2qqg/aicook-lcv4d/dataset/1
+- License: MIT
+- Used for 12 supported produce classes, 362 train / 103 valid / 51 test images.
+  Images stay outside this repository.
+
 ## LVIS / COCO
 
 - LVIS: https://www.lvisdataset.org/

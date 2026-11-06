@@ -179,6 +179,24 @@ training data hurt more than cooked-dish noise. Do not adopt the clean filter;
 add clean tabletop/fridge photos instead of deleting existing images. See
 `outputs/clean_filter_report.md`.
 
+### IntAli + AICook mixed m-seg
+
+AICook (516 images, 30 classes, MIT) was filtered to 12 supported produce
+classes and merged with IntAli masks: 1,496 train / 224 val.
+
+| Test | Model | Recall | Class | End-to-end | FP/image |
+| --- | --- | ---: | ---: | ---: | ---: |
+| IntAli | IntAli-only m-seg | 91.6% | 94.6% | 86.6% | 0.48 |
+| IntAli | **IntAli + AICook** | 91.1% | **94.9%** | 86.4% | **0.43** |
+| AICook | IntAli-only m-seg | 22.1% | 58.3% | 12.9% | 1.53 |
+| AICook | **IntAli + AICook** | **94.9%** | **97.6%** | **92.6%** | **0.31** |
+
+AICook closes the cross-fridge gap while preserving IntAli performance. Caveat:
+AICook uses one fridge/fixed camera, so 92.6% is not proof of arbitrary phone
+photos. Candidate weights:
+`runs/mixed_seg_v2_yolov8m/weights/best.pt`; see
+`outputs/mixed_aicook_report.md`.
+
 ### Single-item classifier (Fruits-360 + IntAli)
 
 A compact 100x100 Fruits-360 version (398 MB) was filtered to 30 supported
