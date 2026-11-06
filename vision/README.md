@@ -57,7 +57,14 @@ needs `weights/yolov8s.pt` to start.
 
 ## Improved Model
 
-The specialized produce detector is:
+The current serving default is the IntAli + AICook m-seg model:
+
+```text
+weights/fruits_vegetables_yolov8m_seg_aicook_v1.pt
+```
+
+It is a 47-class YOLOv8m-seg head trained on IntAli and AICook produce data.
+The older 47-class v2 detector is kept as a rollback:
 
 ```text
 weights/fruits_vegetables_yolov8s_cn_v2.pt
@@ -78,16 +85,16 @@ python scripts/prune_rare_classes.py `
   --output weights/fruits_vegetables_yolov8s_cn_v2.pt
 ```
 
-The server's `--produce-weights` default points at this v2 file.
+The server's `--produce-weights` default points at the AICook m-seg file.
 
 ## Scope
 
 This service only recognizes **raw produce before it is put into the fridge**.
 Cooked dishes, plated meals and restaurant photos are out of scope and have
 been removed from the training data and weights. Ingredient photos taken on a
-table or shelf are in scope. The serving default is the 47-class produce model;
-meat, eggs, tofu and packaged food are handled manually or by a separate future
-module.
+table or shelf are in scope. The serving default is the 47-class IntAli + AICook
+m-seg model; meat, eggs, tofu and packaged food are handled manually or by a
+separate future module.
 
 Only raw-produce training/evaluation data is kept outside the repository:
 
@@ -134,9 +141,8 @@ shelves) was filtered to 26 produce classes: 1,130 train, 125 val, 382 test.
 
 Target-style data gives the largest gain so far, but IntAli-only training
 forgets LVIS (9.1% recall). Mixed training keeps the target gain and partially
-retains source data. Candidate weights:
-`runs/raw_mixed_v1/weights/best.pt`; the serving default remains v2 until a
-Chinese countertop test. See `outputs/intali_report.md`.
+retains source data. The later IntAli + AICook m-seg supersedes this candidate;
+see below. See `outputs/intali_report.md`.
 
 ### YOLOv8m-seg vs YOLOv8s (fair comparison)
 
