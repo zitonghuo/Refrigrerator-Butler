@@ -44,6 +44,37 @@ cd vision
 说明见 [`vision/README.md`](vision/README.md)；与小程序/云函数的接入方式见
 [`app/docs/摄像与识别部署.md`](app/docs/摄像与识别部署.md) 和 [`docs/小程序接入识别服务.md`](docs/小程序接入识别服务.md)。
 
+### 模型权重（GitHub Release）
+
+模型权重不进 Git。clone 仓库后必须先从 Release 下载当前默认模型：
+
+```text
+fruits_vegetables_yolov8m_seg_aicook_v1.pt
+```
+
+下载页：[GitHub Releases](https://github.com/zitonghuo/Refrigrerator-Butler/releases/latest)
+
+放置到：
+
+```text
+vision/weights/fruits_vegetables_yolov8m_seg_aicook_v1.pt
+```
+
+SHA256：
+
+```text
+E571ADB223D04C6717C12F04295527EF98B23B87C234971C18BF37AA6F9D7B55
+```
+
+校验：
+
+```powershell
+(Get-FileHash .\vision\weights\fruits_vegetables_yolov8m_seg_aicook_v1.pt -Algorithm SHA256).Hash
+```
+
+没有权重时，`vision` 服务无法启动识别；回滚模型和发布步骤见
+[`vision/weights/README.md`](vision/weights/README.md)。
+
 ## 文档
 
 | 文档 | 内容 |
@@ -77,7 +108,7 @@ cd vision
 ## 数据与文件
 
 - 云开发版数据存在云数据库；本地演示版数据在 `local-demo/data/fridge.db`（不纳入 Git）。
-- 模型权重（约 520 MB）、训练数据集（约 5 GB）和训练产物不在仓库内；数据集已移到 `E:\fridge-keeper-datasets\`，恢复方式见 [`vision/README.md`](vision/README.md)。
+- 模型权重（当前约 52 MB）、训练数据集和训练产物不在仓库内；数据集已移到 `E:\fridge-keeper-datasets\`，模型从 GitHub Releases 下载，恢复方式见 [`vision/weights/README.md`](vision/weights/README.md)。
 - 仓库不包含任何密钥；OCR/识别的令牌只通过云函数或容器环境变量注入。
 
 ## 开发与检查

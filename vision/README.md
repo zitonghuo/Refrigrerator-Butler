@@ -31,8 +31,8 @@ It contains 180 manually labeled images and 2,725 object boxes. See
 
 ## Datasets and Training Artifacts Are Not in the Repository
 
-To keep the Git repository small, `datasets/` (about 5 GB) and `runs/` (about
-240 MB) are stored outside the project:
+To keep the Git repository small, datasets and training runs are stored outside
+the project:
 
 ```text
 E:\fridge-keeper-datasets\
@@ -40,20 +40,11 @@ E:\fridge-keeper-datasets\
   runs\
 ```
 
-The scripts in `scripts/` still expect `datasets/` relative to this directory.
-Restore it when you need to evaluate or retrain:
-
-```powershell
-# 直接移回（推荐，同盘瞬时完成）
-Move-Item E:\fridge-keeper-datasets\datasets .\datasets
-
-# 或者建目录联接，不占用仓库空间
-New-Item -ItemType Junction -Path .\datasets -Target E:\fridge-keeper-datasets\datasets
-```
-
-Model weights (`weights/*.pt`, about 520 MB) are also excluded from Git; download
-them with `scripts/download_weights.py` or keep a local copy. The API service
-needs `weights/yolov8s.pt` to start.
+The scripts in `scripts/` accept explicit dataset paths; pass
+`--data E:\fridge-keeper-datasets\datasets\...` when evaluating or retraining.
+Model weights (`weights/*.pt`) are also excluded from Git. Download the current
+default from GitHub Releases (see `weights/README.md`), or keep a local copy.
+The API service also needs `weights/yolov8s.pt` for the general/hybrid backend.
 
 ## Improved Model
 
@@ -69,6 +60,11 @@ The older 47-class v2 detector is kept as a rollback:
 ```text
 weights/fruits_vegetables_yolov8s_cn_v2.pt
 ```
+
+Weights are not tracked in Git. Download the current default from
+[GitHub Releases](https://github.com/zitonghuo/Refrigrerator-Butler/releases/latest)
+and verify it with the SHA256 in
+[`weights/README.md`](weights/README.md).
 
 It was trained on 6,721 images and 63 fruit and vegetable classes, then pruned to
 47 classes for Chinese household use. Rare or duplicated classes such as

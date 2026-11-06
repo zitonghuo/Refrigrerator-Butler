@@ -52,6 +52,7 @@
 
 云媒体未开启时，可以用“本地预览 + 本机模型直连”在开发者工具里验证识别：
 
+0. 先从 [GitHub Releases](https://github.com/zitonghuo/Refrigrerator-Butler/releases/latest) 下载当前默认权重，放到 `vision/weights/fruits_vegetables_yolov8m_seg_aicook_v1.pt`；文件不在 Git 仓库里，缺失时服务无法识别。
 1. 启动识别服务（在仓库根目录）：
    ```powershell
    cd vision
