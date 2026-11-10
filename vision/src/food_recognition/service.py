@@ -162,6 +162,52 @@ class RecognitionResult:
         return json.dumps(self.to_dict(), ensure_ascii=False, indent=indent)
 
 
+def _box_area(box: list[int]) -> float:
+    return max(0, box[2] - box[0]) * max(0, box[3] - box[1])
+
+
+def _box_intersection(a: list[int], b: list[int]) -> float:
+    return max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(
+        0, min(a[3], b[3]) - max(a[1], b[1])
+    )
+
+
+def deduplicate_candidates(
+    candidates: list["FoodCandidate"],
+    *,
+    box_iou_threshold: float = 0.5,
+    containment_threshold: float = 0.75,
+) -> list["FoodCandidate"]:
+    """Suppress duplicate boxes of the same class from stacked produce masks.
+
+    A prediction is dropped when it overlaps an already accepted same-class
+    box (IoU) or when most of the smaller box is contained in the larger one.
+    """
+    kept: list[FoodCandidate] = []
+    for candidate in sorted(candidates, key=lambda item: item.confidence, reverse=True):
+        duplicate = False
+        for accepted in kept:
+            if accepted.class_id != candidate.class_id:
+                continue
+            intersection = _box_intersection(candidate.bbox_xyxy, accepted.bbox_xyxy)
+            union = (
+                _box_area(candidate.bbox_xyxy)
+                + _box_area(accepted.bbox_xyxy)
+                - intersection
+            )
+            iou = intersection / union if union else 0.0
+            smaller = min(
+                _box_area(candidate.bbox_xyxy), _box_area(accepted.bbox_xyxy)
+            )
+            containment = intersection / smaller if smaller else 0.0
+            if iou >= box_iou_threshold or containment >= containment_threshold:
+                duplicate = True
+                break
+        if not duplicate:
+            kept.append(candidate)
+    return kept
+
+
 def resolve_device(requested: str = "auto") -> str:
     if requested != "auto":
         return requested
@@ -182,7 +228,7 @@ class FoodRecognizer:
         weights: str | Path = DEFAULT_WEIGHTS,
         *,
         device: str = "auto",
-        confidence_threshold: float = 0.25,
+        confidence_threshold: float = 0.35,
         iou_threshold: float = 0.5,
         max_detections: int = 300,
         image_size: int = 640,
@@ -261,5 +307,5 @@ class FoodRecognizer:
             device=self.device,
             image_width=int(width),
             image_height=int(height),
-            candidates=candidates,
+            candidates=deduplicate_candidates(candidates),
         )

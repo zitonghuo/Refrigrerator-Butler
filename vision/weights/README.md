@@ -8,35 +8,49 @@ https://github.com/zitonghuo/Refrigrerator-Butler/releases/latest
 ## Current default
 
 ```text
-fruits_vegetables_yolov8m_seg_aicook_v1.pt
+fruits_vegetables_yolov8m_seg_dfv16_v3.pt
 ```
 
-- Size: 52.3 MB
-- SHA256: `E571ADB223D04C6717C12F04295527EF98B23B87C234971C18BF37AA6F9D7B55`
-- Trained on IntAli + AICook produce data
+- Size: 218.7 MB
+- SHA256: `0A2037924A563F1423A4193472C77ADD7879F844D168B653908434AB9552E167`
+- Trained on IntAli + AICook + DFV16 SAM-seg data
 - YOLOv8m-seg, 47-class head, 640 input
 
 Place it at:
 
 ```text
-vision/weights/fruits_vegetables_yolov8m_seg_aicook_v1.pt
+vision/weights/fruits_vegetables_yolov8m_seg_dfv16_v3.pt
 ```
+
+If this file is absent, the server falls back to the previous
+`fruits_vegetables_yolov8m_seg_aicook_v1.pt` checkpoint when available.
 
 Verify on Windows:
 
 ```powershell
-(Get-FileHash .\vision\weights\fruits_vegetables_yolov8m_seg_aicook_v1.pt -Algorithm SHA256).Hash
+(Get-FileHash .\vision\weights\fruits_vegetables_yolov8m_seg_dfv16_v3.pt -Algorithm SHA256).Hash
 ```
 
 ## Rollback
 
-The previous 47-class detector remains available as a rollback:
+The previous 47-class m-seg detector:
+
+```text
+fruits_vegetables_yolov8m_seg_aicook_v1.pt
+```
+
+The older detection fallback:
 
 ```text
 fruits_vegetables_yolov8s_cn_v2.pt
 ```
 
-Start the service with:
+Start the service with either explicit checkpoint:
+
+```powershell
+python -m food_recognition.server `
+  --produce-weights weights/fruits_vegetables_yolov8m_seg_aicook_v1.pt
+```
 
 ```powershell
 python -m food_recognition.server `

@@ -1,4 +1,4 @@
-from food_recognition.service import FoodCandidate, RecognitionResult
+from food_recognition.service import FoodCandidate, RecognitionResult, deduplicate_candidates
 from food_recognition.server import aggregate_candidates, image_suffix
 from food_recognition import catalog
 
@@ -98,3 +98,39 @@ def test_catalog_contains_chinese_metadata() -> None:
     assert classes["chicken_breast"]["default_storage"] == "冷冻"
     assert classes["dumpling"]["shelf_life_days"]["冷冻"] == [90, 180]
     assert "肉桂" not in classes
+
+
+def test_duplicate_same_class_is_suppressed() -> None:
+    candidates = [
+        FoodCandidate(0, "carrot", "胡萝卜", 0.99, [10, 10, 100, 100]),
+        FoodCandidate(0, "carrot", "胡萝卜", 0.80, [15, 15, 95, 95]),
+    ]
+
+    kept = deduplicate_candidates(candidates)
+
+    assert len(kept) == 1
+    assert kept[0].confidence == 0.99
+
+
+def test_contained_same_class_is_suppressed() -> None:
+    candidates = [
+        FoodCandidate(1, "apple", "苹果", 0.95, [0, 0, 100, 100]),
+        FoodCandidate(1, "apple", "苹果", 0.60, [40, 40, 60, 60]),
+    ]
+
+    kept = deduplicate_candidates(candidates)
+
+    assert len(kept) == 1
+    assert kept[0].confidence == 0.95
+
+
+def test_different_classes_and_separate_boxes_are_kept() -> None:
+    candidates = [
+        FoodCandidate(1, "apple", "苹果", 0.95, [0, 0, 100, 100]),
+        FoodCandidate(2, "tomato", "番茄", 0.90, [10, 10, 90, 90]),
+        FoodCandidate(1, "apple", "苹果", 0.80, [200, 200, 300, 300]),
+    ]
+
+    kept = deduplicate_candidates(candidates)
+
+    assert len(kept) == 3

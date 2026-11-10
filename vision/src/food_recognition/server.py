@@ -19,6 +19,18 @@ from .service import DEFAULT_WEIGHTS, RUNTIME_CONFIG_DIR, SERVICE_ROOT, FoodReco
 
 
 GENERIC_LABELS = {"food", "food-drinks"}
+# Keep the new DFV16 checkpoint as the preferred default, but fall back to the
+# previous model when only the older download is present.
+def _default_produce_weights() -> Path:
+    candidates = [
+        SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8m_seg_dfv16_v3.pt",
+        SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8m_seg_aicook_v1.pt",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return candidates[0]
+
 # 运行期目录可用 FRIDGE_VISION_RUNTIME_DIR 指定，容器里挂载可写卷即可。
 FRAME_ROOT = RUNTIME_CONFIG_DIR / "frames"
 FRAME_ROOT.mkdir(parents=True, exist_ok=True)
@@ -231,7 +243,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--produce-weights",
         type=Path,
-        default=SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8m_seg_aicook_v1.pt",
+        default=_default_produce_weights(),
     )
     parser.add_argument(
         "--backend",
@@ -244,7 +256,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=SERVICE_ROOT / "weights" / "yolov8s-worldv2.pt",
     )
     parser.add_argument("--device", default="auto")
-    parser.add_argument("--conf", type=float, default=0.15)
+    parser.add_argument("--conf", type=float, default=0.35)
     parser.add_argument("--iou", type=float, default=0.5)
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--agnostic-nms", action="store_true")
