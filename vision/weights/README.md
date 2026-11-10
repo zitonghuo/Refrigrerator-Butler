@@ -11,10 +11,12 @@ https://github.com/zitonghuo/Refrigrerator-Butler/releases/latest
 fruits_vegetables_yolov8m_seg_dfv16_v3.pt
 ```
 
-- Size: 218.7 MB
+- Size: 52.3 MB
 - SHA256: `0A2037924A563F1423A4193472C77ADD7879F844D168B653908434AB9552E167`
 - Trained on IntAli + AICook + DFV16 SAM-seg data
 - YOLOv8m-seg, 47-class head, 640 input
+- Release asset:
+  https://github.com/zitonghuo/Refrigrerator-Butler/releases/download/models-v1/fruits_vegetables_yolov8m_seg_dfv16_v3.pt
 
 Place it at:
 
