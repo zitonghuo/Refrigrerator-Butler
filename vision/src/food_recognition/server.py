@@ -23,6 +23,7 @@ GENERIC_LABELS = {"food", "food-drinks"}
 # previous model when only the older download is present.
 def _default_produce_weights() -> Path:
     candidates = [
+        SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8m_seg_expanded_v4.pt",
         SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8m_seg_dfv16_v3.pt",
         SERVICE_ROOT / "weights" / "fruits_vegetables_yolov8m_seg_aicook_v1.pt",
     ]
