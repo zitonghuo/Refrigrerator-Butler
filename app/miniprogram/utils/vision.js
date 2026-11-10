@@ -42,7 +42,7 @@ function normalize(list) {
   return out;
 }
 
-async function recognize(filePath) {
+async function recognize(filePath, kind = 'photo') {
   if (!config.visionUrl) throw new Error('本机识别服务未配置，请在 config.js 设置 visionUrl');
   const data = await readBase64(filePath);
   let response;
@@ -54,7 +54,7 @@ async function recognize(filePath) {
         'content-type': 'application/json',
         ...(config.visionToken ? { Authorization: 'Bearer ' + config.visionToken } : {})
       },
-      data: { kind: 'photo', images: [data] },
+      data: { kind, images: [data] },
       timeout: 60000
     });
   } catch (error) {
@@ -65,6 +65,14 @@ async function recognize(filePath) {
     throw new Error((body && body.error) || '识别服务返回异常，请稍后重试');
   }
   if (!body || !Array.isArray(body.candidates)) throw new Error('识别服务返回格式不正确');
+  if (kind === 'single') {
+    const raw = body.candidates[0];
+    const rows = normalize(raw ? [raw] : []);
+    if (rows.length && Array.isArray(raw.alternatives)) {
+      rows[0].alternatives = raw.alternatives.filter(n => typeof n === 'string' && n.length <= 40 && n !== rows[0].name).slice(0, 1);
+    }
+    return rows;
+  }
   return normalize(body.candidates);
 }
 

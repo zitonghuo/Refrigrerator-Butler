@@ -30,7 +30,12 @@ async function recognizeReceipt(path) {
   }
   const canvas = wx.createOffscreenCanvas({ type: '2d', width: 1, height: 1 });
   const img = canvas.createImage();
-  await new Promise((resolve,reject) => { img.onload=resolve; img.onerror=reject; img.src=path; });
+  await new Promise((resolve,reject) => {
+    const timer = setTimeout(() => reject(Error('Image decode timeout')), 4000);
+    img.onload = () => { clearTimeout(timer); resolve(); };
+    img.onerror = err => { clearTimeout(timer); reject(err); };
+    img.src = path;
+  });
   const scale = Math.min(1.5, 2200/Math.max(img.width,img.height));
   const width = canvas.width = Math.max(1,Math.round(img.width*scale));
   const height = canvas.height = Math.max(1,Math.round(img.height*scale));

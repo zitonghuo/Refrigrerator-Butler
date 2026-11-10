@@ -7,6 +7,7 @@ const presets = [[1280, 82], [1024, 74], [896, 64], [768, 55], [640, 50], [512, 
 async function recognize(path, consentVersion, kind = 'photo') {
   async function send(imageBase64) {
     const response = await api.call('vision.recognize', { imageBase64, consentVersion, kind:kind === 'receipt' ? 'receipt-lines' : kind });
+    if (kind === 'single' && response.kind !== 'single') throw Error('请先部署新版 fridgeApi 云函数，以启用单品识别。');
     return kind === 'receipt' ? require('./receipt-ocr').receiptRows(response.lines) : response.candidates;
   }
   if (kind === 'receipt') {

@@ -214,6 +214,12 @@
     }
   },
   "additional_classes": [
+    {"id":"almond","name_zh":"杏仁","name_en":"almond","category":"坚果","storage":["冷藏"],"default_storage":"冷藏","default_unit":"粒","countable":true,"model_labels":[],"prompt":"almond"},
+    {"id":"apricot","name_zh":"杏","name_en":"apricot","category":"水果","storage":["冷藏"],"default_storage":"冷藏","default_unit":"个","countable":true,"model_labels":[],"prompt":"apricot"},
+    {"id":"date_fruit","name_zh":"椰枣","name_en":"date fruit","category":"水果","storage":["冷藏"],"default_storage":"冷藏","default_unit":"颗","countable":true,"model_labels":["date/date fruit"],"prompt":"date fruit"},
+    {"id":"ginger","name_zh":"生姜","name_en":"ginger","category":"蔬菜","storage":["冷藏"],"default_storage":"冷藏","default_unit":"块","countable":true,"model_labels":["ginger/gingerroot"],"prompt":"ginger"},
+    {"id":"persimmon","name_zh":"柿子","name_en":"persimmon","category":"水果","storage":["冷藏"],"default_storage":"冷藏","default_unit":"个","countable":true,"model_labels":[],"prompt":"persimmon"},
+    {"id":"sweet_potato","name_zh":"红薯","name_en":"sweet potato","category":"蔬菜","storage":["冷藏"],"default_storage":"冷藏","default_unit":"个","countable":true,"model_labels":[],"prompt":"sweet potato"},
     {"id": "dragon_fruit", "name_zh": "火龙果", "name_en": "dragon fruit", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "个", "countable": true, "aliases_zh": ["红心火龙果", "白心火龙果"], "model_labels": [], "prompt": "dragon fruit", "shelf_life_days": {"冷藏": [3, 7]}},
     {"id": "lychee", "name_zh": "荔枝", "name_en": "lychee", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["荔枝"], "model_labels": [], "prompt": "lychee", "shelf_life_days": {"冷藏": [2, 5]}},
     {"id": "longan", "name_zh": "龙眼", "name_en": "longan", "category": "水果", "storage": ["冷藏"], "default_storage": "冷藏", "default_unit": "盒", "countable": false, "aliases_zh": ["龙眼", "桂圆"], "model_labels": [], "prompt": "longan", "shelf_life_days": {"冷藏": [3, 7]}},

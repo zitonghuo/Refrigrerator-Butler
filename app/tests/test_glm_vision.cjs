@@ -1,5 +1,10 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');
 const {createVision,parse,CONSENT}=require('../cloudfunctions/fridgeApi/glm-vision');
+test('single-photo ambiguity stays on one editable food row',()=>{
+ const rows=parse(JSON.stringify({candidates:[{name:'大蒜',alternative:'生姜'},{name:'生姜'}]}),true);
+ assert.deepEqual(rows.map(r=>[r.name,r.alternatives,r.quantity]),[['大蒜',['生姜'],null]]);
+ assert.deepEqual(parse('{"candidates":[]}',true),[]);
+});
 function setup(overrides={}){
  let user={homeId:'h'},calls=0,now=Date.now();let tail=Promise.resolve();
  const store={transaction(fn){const task=tail.then(()=>fn({get:async c=>c==='fridge_users'?user:{members:[{id:'u'}]},put:async(c,id,u)=>{user=u}}));tail=task.catch(()=>{});return task;}};

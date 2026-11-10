@@ -199,6 +199,19 @@ photos. Candidate weights:
 `runs/mixed_seg_v2_yolov8m/weights/best.pt`; see
 `outputs/mixed_aicook_report.md`.
 
+### 手机实拍的可选模型配置
+
+**单品参考图模式**用于整张照片以一种食材为主的场景。在安装了 `clip-anytorch` 的 Python 环境中，为下方服务命令增加 `--single-weights <ViT-B-32.pt路径> --single-references <参考图根目录>`。参考图根目录下按食材目录中的中文名称分子文件夹，至少两类，每类放入有代表性的原图。模型与参考图在服务启动时加载一次。开发版小程序使用本机服务时，在 `app/miniprogram/config.js` 中设置 `visionUrl` 和 `singleVisionLocal: true`，再点“识别一种食材”。默认云端配置使用智谱，需部署配套的 `fridgeApi`。两种途径均允许就地选择备选名称。
+
+在 `vision` 目录下，使用已安装本项目的 Python 环境运行：
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path src).Path
+python -m food_recognition.server --backend hybrid --scene-weights weights/yolov8n-coco.pt
+```
+
+此配置需要原有的两份项目权重，以及 [Ultralytics 的 COCO YOLOv8n 权重](https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt)（本地命名为 `yolov8n-coco.pt`）。苹果、香蕉、西兰花、胡萝卜和橙子使用 COCO 模型的检测结果，其余品类沿用项目模型。每帧多运行一个模型。用于本地对照测试，实际手机照片的效果和耗时需要独立验证。
+
 ### Single-item classifier (Fruits-360 + IntAli)
 
 A compact 100x100 Fruits-360 version (398 MB) was filtered to 30 supported

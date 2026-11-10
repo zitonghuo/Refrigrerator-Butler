@@ -94,16 +94,39 @@ Page({
       this.setData({ foods: result.candidates.map(prepareFood), status: result.candidates.length ? '识别完成，可在下方修改或移除食材。' : '没有识别到食材，可以手动填写或换一张照片。' });
     });
   },
+  onUnload() {
+    this.receiptPageClosed = true;
+    clearInterval(this.receiptTimer);
+  },
+  async timedReceipt(stage, work) {
+    const start = Date.now();
+    const seconds = () => ((Date.now() - start) / 1000).toFixed(1);
+    const refresh = () => this.setData({ receiptProgress: stage + ' · ' + seconds() + ' 秒' });
+    refresh();
+    this.receiptTimer = setInterval(refresh, 500);
+    try {
+      const rows = await work();
+      return { rows, elapsed: seconds() };
+    } finally {
+      clearInterval(this.receiptTimer);
+      if (!this.receiptPageClosed) this.setData({ receiptProgress: '' });
+    }
+  },
   recognizeGlm(event) {
     const receipt = event?.currentTarget?.dataset?.kind === 'receipt';
+    const single = event?.currentTarget?.dataset?.kind === 'single';
+    if (single && this.data.visionEnabled && config.singleVisionLocal) return this.recognizeLocal(event);
     const local=this.data.local;if(!local||local.kind!=='image')return;
     return api.run(this,async()=>{
       if (receipt) {
         this.setData({ foods:null, suggestion:null, selected:'', confirmed:false, status:'正在读取小票原文…' });
-        let rows;
-        try { rows = await require('../../utils/receipt-ocr').recognizeReceipt(local.path); } catch { rows = []; }
+        let rows = [], elapsed;
+        try {
+          ({ rows, elapsed } = await this.timedReceipt('本机读票', () => require('../../utils/receipt-ocr').recognizeReceipt(local.path)));
+        } catch { /* Offer cloud recognition below. */ }
+        if (this.receiptPageClosed) return;
         if (rows.length) {
-          this.setData({ foods:rows, status:'请对照每项下方的票面文字，补全漏字后再入库。' });
+          this.setData({ foods:rows, status:'本机读票用时 ' + elapsed + ' 秒，读到 ' + rows.length + ' 项。请核对票面文字。' });
           return;
         }
         this.setData({ status:'本机未读到商品行，可继续尝试云端转录。' });
@@ -113,23 +136,25 @@ Page({
       const consent=await invoke('showModal',{title:receipt ? '识别小票商品名' : '使用智谱识别照片',content:(receipt ? '建议仅保留商品明细，遮住会员号和支付信息。' : '') + '本次压缩照片将经微信云函数发送给智谱开放平台（GLM-4V-Flash）处理。请避开人脸、证件等个人信息。识别可能出错，数量和日期需自行填写。是否发送？',confirmText:'同意发送'});
       if(!consent.confirm)return;
       this.setData({foods:null,suggestion:null,selected:'',confirmed:false,status:'正在识别，最多等待约半分钟…'});
-      let foods;
+      let foods, elapsed;
       try {
-        foods = await require('../../utils/glm-vision').recognize(local.path, ready.consentVersion, receipt ? 'receipt' : 'photo');
+        const recognize = () => require('../../utils/glm-vision').recognize(local.path, ready.consentVersion, receipt ? 'receipt' : single ? 'single' : 'photo');
+        if (receipt) ({ rows: foods, elapsed } = await this.timedReceipt('云端读票', recognize));
+        else foods = await recognize();
       } catch (error) {
         this.setData({ status: '' });
         throw error instanceof Error ? error : Error('照片处理失败，请重新选择照片。');
       }
-      this.setData({foods:foods.map(prepareFood),status:foods.length?'请核对名称，数量、日期和存放位置需自行确认。':(receipt ? '未读到商品名，可裁剪商品明细区域后再试。' : '未识别到明确食材，请手动填写。')});
+      this.setData({foods:foods.map(prepareFood),status:(receipt ? '云端读票用时 ' + elapsed + ' 秒。' : '') + (foods.length ? '请核对名称、数量和日期。' : '未读到明确名称，可裁剪后再试。')});
     });
   },
-  recognizeLocal() {
+  recognizeLocal(event) {
     const local = this.data.local;
     if (!local || local.kind !== 'image' || !this.data.visionEnabled) return;
     return api.run(this, async () => {
       const consent=await invoke('showModal',{title:'发送照片进行识别',content:'这张照片将发送到开发者配置的本机识别服务。是否继续？',confirmText:'发送识别'});if(!consent.confirm)return;
       this.setData({ status: '正在用本机模型识别…', foods: null, suggestion: null, confirmed: false });
-      const foods = await vision.recognize(local.path);
+      const foods = await vision.recognize(local.path, event?.currentTarget?.dataset?.kind === 'single' ? 'single' : 'photo');
       this.setData({ foods: foods.map(prepareFood), status: foods.length ? '识别完成，可在下方修改或移除食材。' : '没有识别到食材，可以手动填写或换一张照片。' });
     });
   },
@@ -150,6 +175,13 @@ Page({
   },
   clearFoodDate(e) {
     this.setData({ ['foods[' + e.currentTarget.dataset.index + '].expiry']: '', confirmed: false });
+  },
+  chooseAlternative(e) {
+    const { index, name } = e.currentTarget.dataset;
+    const food = this.data.foods[index];
+    if (!food?.alternatives?.includes(name)) return;
+    this.changeFood({ currentTarget: { dataset: { index, field: 'name' } }, detail: { value: name } });
+    this.setData({ ['foods[' + index + '].alternatives']: [food.name] });
   },
   removeFood(e) {
     const foods = this.data.foods.filter((_, index) => index !== Number(e.currentTarget.dataset.index));

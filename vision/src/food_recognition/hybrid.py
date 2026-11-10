@@ -6,6 +6,9 @@ from . import catalog
 from .service import FoodCandidate, FoodRecognizer, RecognitionResult
 
 
+SCENE_LABELS = ("apple", "banana", "broccoli", "carrot", "orange")
+
+
 def box_iou(first: list[int], second: list[int]) -> float:
     left = max(first[0], second[0])
     top = max(first[1], second[1])
@@ -26,6 +29,7 @@ class HybridFoodRecognizer:
         produce_weights: str | Path,
         general_weights: str | Path,
         *,
+        scene_weights: str | Path | None = None,
         device: str = "auto",
         produce_confidence: float = 0.15,
         general_confidence: float = 0.25,
@@ -54,6 +58,15 @@ class HybridFoodRecognizer:
             image_size=image_size,
         )
         self.weights = self.produce.weights
+        self.scene = None
+        if scene_weights is not None:
+            self.scene = FoodRecognizer(
+                scene_weights, device=device, confidence_threshold=general_confidence,
+                iou_threshold=iou_threshold, image_size=image_size,
+                max_detections=max_detections,
+            )
+            if not set(SCENE_LABELS).issubset(self.scene.model.names.values()):
+                raise ValueError("Scene weights must include all five COCO produce labels")
         self.device = self.produce.device
         self.image_size = image_size
 
@@ -65,27 +78,31 @@ class HybridFoodRecognizer:
             for candidate in produce_result.candidates
             if catalog.is_fridge_candidate(candidate.label)
         ]
-        existing_names = {candidate.display_name for candidate in merged}
+        produce_candidates = tuple(merged)
 
         for candidate in general_result.candidates:
             if not catalog.is_fridge_candidate(candidate.label):
                 continue
-            if candidate.display_name in existing_names:
-                continue
             if any(
                 box_iou(candidate.bbox_xyxy, existing.bbox_xyxy) >= 0.6
-                for existing in merged
+                for existing in produce_candidates
             ):
                 continue
             merged.append(candidate)
-            existing_names.add(candidate.display_name)
 
+        model_paths = [produce_result.model, general_result.model]
+        if self.scene is not None:
+            scene_result = self.scene.predict_image(image_path)
+            scene_names = {catalog.display_name(label) for label in SCENE_LABELS}
+            merged = [item for item in merged if item.display_name not in scene_names]
+            merged.extend(item for item in scene_result.candidates if item.label in SCENE_LABELS)
+            model_paths.append(scene_result.model)
         merged.sort(key=lambda candidate: candidate.confidence, reverse=True)
         return RecognitionResult(
             schema_version="1.0",
             source_type="photo",
             source=produce_result.source,
-            model=f"{produce_result.model}; {general_result.model}",
+            model="; ".join(model_paths),
             device=self.device,
             image_width=produce_result.image_width,
             image_height=produce_result.image_height,

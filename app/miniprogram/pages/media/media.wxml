@@ -15,8 +15,9 @@
     <view wx:if="{{local.kind==='image'}}" class="detail">点击照片可放大查看。</view>
     <button wx:if="{{cloudEnabled}}" bindtap="upload" loading="{{busy}}" disabled="{{busy}}">上传并保存</button>
     <button wx:if="{{!cloudEnabled && visionEnabled}}" bindtap="recognizeLocal" loading="{{busy}}" disabled="{{busy}}">用本机模型识别</button>
-    <button wx:if="{{local.kind==='image'}}" bindtap="recognizeGlm" loading="{{busy}}" disabled="{{busy}}">智谱识别食材</button>
-    <button wx:if="{{local.kind==='image'}}" data-kind="receipt" bindtap="recognizeGlm" loading="{{busy}}" disabled="{{busy}}">识别小票商品名</button>
+    <button wx:if="{{local.kind==='image'}}" data-kind="single" bindtap="recognizeGlm" loading="{{busy}}" disabled="{{busy}}">识别一种食材</button>
+    <button wx:if="{{local.kind==='image'}}" bindtap="recognizeGlm" loading="{{busy}}" disabled="{{busy}}">识别多种食材</button>
+    <button wx:if="{{local.kind==='image'}}" data-kind="receipt" bindtap="recognizeGlm" loading="{{busy}}" disabled="{{busy}}">{{receiptProgress || '识别小票商品名'}}</button>
     <button class="secondary" bindtap="saveLocal" disabled="{{busy}}">保存到手机相册</button><button class="secondary" bindtap="clearLocal" disabled="{{busy}}">清除本次预览</button>
   </view>
   <view class="detail">{{status}}</view>
@@ -39,6 +40,7 @@
     <view wx:for="{{foods}}" wx:key="index" class="food-row">
       <view wx:if="{{item.receiptLine}}" class="detail">票面文字：{{item.receiptLine}}</view><view wx:if="{{item.receiptLine && item.name.length === 1}}" class="detail">可能漏字，请对照照片补全。</view><view class="heading"><view class="label">食材 {{index+1}}</view><button class="text-button danger" data-index="{{index}}" bindtap="removeFood" disabled="{{busy}}">移除</button></view>
       <view class="label">名称</view><input value="{{item.name}}" maxlength="80" placeholder="修改食材名称" data-index="{{index}}" data-field="name" bindinput="changeFood" disabled="{{busy}}"/>
+      <button wx:if="{{item.alternatives.length}}" class="text-button" disabled="{{busy}}" data-index="{{index}}" data-name="{{item.alternatives[0]}}" bindtap="chooseAlternative">改为{{item.alternatives[0]}}</button>
       <view class="row"><view class="field"><view class="label">数量</view><input type="digit" value="{{item.quantity || ''}}" placeholder="填写数量" data-index="{{index}}" data-field="quantity" bindinput="changeFood" disabled="{{busy}}"/></view>
       <view class="field"><view class="label">单位</view><picker range="{{units}}" data-index="{{index}}" bindchange="chooseUnit" disabled="{{busy}}"><view class="picker">{{item.unit || '选单位'}} ▾</view></picker><input placeholder="或输入自定义单位" value="{{item.unit}}" maxlength="12" data-index="{{index}}" data-field="unit" bindinput="changeFood" disabled="{{busy}}"/></view></view>
       <picker range="{{locations}}" value="{{item.location === '冷冻' ? 1 : item.location === '常温' ? 2 : 0}}" data-index="{{index}}" data-field="location" bindchange="changeFood" disabled="{{busy}}"><view class="picker">存放位置<text>{{item.location}} ›</text></view></picker>

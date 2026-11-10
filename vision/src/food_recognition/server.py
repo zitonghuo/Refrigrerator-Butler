@@ -93,15 +93,18 @@ def aggregate_candidates(
 def recognize_payload(
     recognizer: FoodRecognizer,
     payload: dict[str, Any],
+    single=None,
 ) -> dict[str, Any]:
     kind = payload.get("kind")
-    if kind not in {"photo", "video"}:
+    if kind == "single" and single is None:
+        raise ValueError("当前服务未配置单品参考模型")
+    if kind not in {"photo", "video", "single"}:
         raise ValueError("当前本地模型只支持照片和视频，小票识别尚未接入")
 
     images = payload.get("images")
     if not isinstance(images, list) or not images:
         raise ValueError("没有收到可识别的图片")
-    if kind == "photo" and len(images) != 1:
+    if kind in {"photo", "single"} and len(images) != 1:
         raise ValueError("照片入口只能提交一张图片")
 
     per_frame: list[list[dict[str, Any]]] = []
@@ -114,6 +117,8 @@ def recognize_payload(
             raw = base64.b64decode(encoded, validate=True)
             image_path = root / f"frame-{index:03d}{image_suffix(raw)}"
             image_path.write_bytes(raw)
+            if kind == "single":
+                return {"candidates": single.predict(image_path), "meta": {"frames": 1, "mode": "single"}}
             result = recognizer.predict_image(image_path)
             per_frame.append([candidate.__dict__ for candidate in result.candidates])
     finally:
@@ -158,6 +163,7 @@ def recognize_payload(
 
 
 class VisionHandler(BaseHTTPRequestHandler):
+    single = None
     recognizer: FoodRecognizer
 
     def log_message(self, *args: Any) -> None:
@@ -227,7 +233,7 @@ class VisionHandler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(size))
             if not isinstance(payload, dict):
                 raise ValueError("请求必须是对象")
-            self.send_json(200, recognize_payload(self.recognizer, payload))
+            self.send_json(200, recognize_payload(self.recognizer, payload, self.single))
         except (ValueError, TypeError, binascii.Error, json.JSONDecodeError) as error:
             self.send_json(400, {"error": str(error) or "识别请求格式不正确"})
         except Exception:
@@ -238,8 +244,12 @@ class VisionHandler(BaseHTTPRequestHandler):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Local food recognition HTTP service.")
     parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--single-weights", type=Path)
+    parser.add_argument("--single-references", type=Path)
     parser.add_argument("--port", type=int, default=8770)
     parser.add_argument("--weights", type=Path, default=DEFAULT_WEIGHTS)
+    parser.add_argument("--scene-weights", type=Path,
+                        help="Optional COCO detector for five produce classes in everyday photos (hybrid backend)")
     parser.add_argument(
         "--produce-weights",
         type=Path,
@@ -270,6 +280,7 @@ def main(argv: list[str] | None = None) -> int:
         recognizer = HybridFoodRecognizer(
             args.produce_weights,
             args.weights,
+            scene_weights=args.scene_weights,
             device=args.device,
             produce_confidence=args.conf,
             general_confidence=0.25,
@@ -302,6 +313,11 @@ def main(argv: list[str] | None = None) -> int:
             augment=args.augment,
         )
     VisionHandler.recognizer = recognizer
+    if bool(args.single_weights) != bool(args.single_references):
+        raise ValueError("Specify both --single-weights and --single-references")
+    if args.single_weights:
+        from .single_food import SingleFoodRecognizer
+        VisionHandler.single = SingleFoodRecognizer(args.single_weights, args.single_references)
     server = ThreadingHTTPServer((args.host, args.port), VisionHandler)
     print(
         f"Food recognition service ready on http://{args.host}:{args.port} "
