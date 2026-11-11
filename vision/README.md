@@ -201,6 +201,20 @@ photos. Candidate weights:
 
 ### 手机实拍的可选模型配置
 
+### 在小程序中选择自训练模型
+
+照片预览下方可以选择“自训练模型”或“智谱模型”。自训练请求带有 `model: trained`，服务端只调用团队的检测权重并返回实际权重路径供排查；服务未配置、未加载或版本不匹配时，页面显示错误。小票仍使用独立的文字识别入口。
+
+当前权重为 `fruits_vegetables_yolov8m_seg_expanded_v4.pt`，下载位置和 SHA256 见 [权重说明](weights/README.md)。使用已安装 vision 依赖的 Python 执行：
+
+```powershell
+.\vision\start-trained.ps1 -Python python
+```
+
+微信开发者工具模拟器通过 `devtoolsVisionUrl` 连接 `127.0.0.1:8770`，调试时需允许本地请求。手机使用 `app/miniprogram/config.js` 的 `visionUrl`。局域网真机调试可将服务绑定到电脑的局域网 IP，并将该 IP 的 `/recognize` 地址填入配置。公开使用需要持续运行的 HTTPS 服务及小程序请求域名配置。私有服务的鉴权需要在服务端配置 `FRIDGE_VISION_TOKEN`；面向公众时应通过校验家庭身份的后端转发，客户端配置不适合存放服务密钥。
+
+权重和个人参考照片不加入代码仓库。真实识别效果需在自己的照片上核对，界面保留名称修改、数量单位编辑和移除功能。
+
 **单品参考图模式**用于整张照片以一种食材为主的场景。在安装了 `clip-anytorch` 的 Python 环境中，为下方服务命令增加 `--single-weights <ViT-B-32.pt路径> --single-references <参考图根目录>`。参考图根目录下按食材目录中的中文名称分子文件夹，至少两类，每类放入有代表性的原图。模型与参考图在服务启动时加载一次。开发版小程序使用本机服务时，在 `app/miniprogram/config.js` 中设置 `visionUrl` 和 `singleVisionLocal: true`，再点“识别一种食材”。默认云端配置使用智谱，需部署配套的 `fridgeApi`。两种途径均允许就地选择备选名称。
 
 在 `vision` 目录下，使用已安装本项目的 Python 环境运行：

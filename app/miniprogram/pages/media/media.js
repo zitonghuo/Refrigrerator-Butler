@@ -5,7 +5,7 @@ const parseLabel = require('../../utils/label-parser');
 const vision = require('../../utils/vision');
 const invoke = (method, options) => new Promise((resolve, reject) => wx[method]({ ...options, success: resolve, fail: reject }));
 Page({
-  data: { units, locations: ['冷藏','冷冻','常温'], cloudEnabled: config.mediaCloudEnabled === true, visionEnabled: vision.enabled(), loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
+  data: { recognitionModel: 'zhipu', units, locations: ['冷藏','冷冻','常温'], cloudEnabled: config.mediaCloudEnabled === true, visionEnabled: vision.enabled(), loading: false, busy: false, error: '', items: [], local: null, selected: '', preview: null, suggestion: null, foods: null, confirmed: false, itemId: '', status: '' },
   onLoad(query) { this.setData({ itemId: query.itemId || '' }); },
   onShow() { this.refresh(); },
   onHide() { this.setData({ preview: null }); },
@@ -115,7 +115,6 @@ Page({
   recognizeGlm(event) {
     const receipt = event?.currentTarget?.dataset?.kind === 'receipt';
     const single = event?.currentTarget?.dataset?.kind === 'single';
-    if (single && this.data.visionEnabled && config.singleVisionLocal) return this.recognizeLocal(event);
     const local=this.data.local;if(!local||local.kind!=='image')return;
     return api.run(this,async()=>{
       if (receipt) {
@@ -148,14 +147,25 @@ Page({
       this.setData({foods:foods.map(prepareFood),status:(receipt ? '云端读票用时 ' + elapsed + ' 秒。' : '') + (foods.length ? '请核对名称、数量和日期。' : '未读到明确名称，可裁剪后再试。')});
     });
   },
+  selectRecognitionModel(e) {
+    if (this.data.busy || this.data.loading) return;
+    const model = e.detail.value;
+    if (!['trained', 'zhipu'].includes(model)) return;
+    this.setData({ recognitionModel: model, error: '', status: '' });
+  },
+  recognizeSelected(event) {
+    if (this.data.recognitionModel === 'trained') return this.recognizeLocal(event);
+    return this.recognizeGlm(event);
+  },
   recognizeLocal(event) {
     const local = this.data.local;
-    if (!local || local.kind !== 'image' || !this.data.visionEnabled) return;
+    if (!local || local.kind !== 'image') return;
     return api.run(this, async () => {
-      const consent=await invoke('showModal',{title:'发送照片进行识别',content:'这张照片将发送到开发者配置的本机识别服务。是否继续？',confirmText:'发送识别'});if(!consent.confirm)return;
-      this.setData({ status: '正在用本机模型识别…', foods: null, suggestion: null, confirmed: false });
-      const foods = await vision.recognize(local.path, event?.currentTarget?.dataset?.kind === 'single' ? 'single' : 'photo');
-      this.setData({ foods: foods.map(prepareFood), status: foods.length ? '识别完成，可在下方修改或移除食材。' : '没有识别到食材，可以手动填写或换一张照片。' });
+      if (!vision.enabled()) throw Error('自训练模型服务尚未连接，请联系开发者配置识别服务地址，或选择智谱模型。');
+      const consent=await invoke('showModal',{title:'使用自训练模型',content:'本次照片将发送至小满冰箱配置的自训练模型服务器处理。是否继续？',confirmText:'发送识别'});if(!consent.confirm)return;
+      this.setData({ status: '正在用自训练模型识别…', foods: null, suggestion: null, confirmed: false, selected: '' });
+      const foods = await vision.recognize(local.path, 'photo', 'trained');
+      this.setData({ foods: foods.map(prepareFood), status: foods.length ? '自训练模型识别完成，可在下方修改或移除食材。' : '自训练模型未检出食材，可选择智谱模型再试或手动填写。' });
     });
   },
  chooseUnit(e) {

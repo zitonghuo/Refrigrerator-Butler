@@ -22,6 +22,25 @@ function wxWith({ statusCode = 200, body, requestFails = false, readFails = fals
   };
 }
 
+test('trained selection requires explicit server confirmation', async () => {
+  let request;
+  const config = { visionUrl: 'https://vision.example/recognize' };
+  const vision = load(config, wxWith({
+    body: { candidates: [], meta: { engine: 'trained' } },
+    capture: value => { request = value; }
+  }));
+  await vision.recognize('photo', 'photo', 'trained');
+  assert.equal(request.data.model, 'trained');
+  const oldServer = load(config, wxWith({ body: { candidates: [] } }));
+  await assert.rejects(oldServer.recognize('photo', 'photo', 'trained'), /版本过旧/);
+});
+
+test('loopback development address is unavailable on a phone', () => {
+  const config = { devtoolsVisionUrl: 'http://127.0.0.1:8770/recognize' };
+  assert.equal(load(config, { getDeviceInfo: () => ({ platform: 'ios' }) }).enabled(), false);
+  assert.equal(load(config, { getDeviceInfo: () => ({ platform: 'devtools' }) }).enabled(), true);
+});
+
 test('sends the photo as base64 JSON and normalizes candidates', async () => {
   let captured;
   const vision = load(

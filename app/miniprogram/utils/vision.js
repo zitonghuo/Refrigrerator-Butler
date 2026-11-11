@@ -5,6 +5,13 @@ const config = require('../config');
 
 const LOCATIONS = ['冷藏', '冷冻', '常温'];
 const LIMIT = 20;
+function endpoint() {
+  if (config.visionUrl) return config.visionUrl;
+  try {
+    if (wx.getDeviceInfo?.().platform === 'devtools') return config.devtoolsVisionUrl || '';
+  } catch { /* Older clients require an explicitly configured endpoint. */ }
+  return '';
+}
 
 const readBase64 = filePath => new Promise((resolve, reject) => {  wx.getFileSystemManager().readFile({
     filePath,
@@ -42,19 +49,20 @@ function normalize(list) {
   return out;
 }
 
-async function recognize(filePath, kind = 'photo') {
-  if (!config.visionUrl) throw new Error('本机识别服务未配置，请在 config.js 设置 visionUrl');
+async function recognize(filePath, kind = 'photo', model) {
+  const url = endpoint();
+  if (!url) throw new Error('本机识别服务未配置，请在 config.js 设置 visionUrl');
   const data = await readBase64(filePath);
   let response;
   try {
     response = await post({
-      url: config.visionUrl,
+      url,
       method: 'POST',
       header: {
         'content-type': 'application/json',
         ...(config.visionToken ? { Authorization: 'Bearer ' + config.visionToken } : {})
       },
-      data: { kind, images: [data] },
+      data: { kind, images: [data], ...(model ? { model } : {}) },
       timeout: 60000
     });
   } catch (error) {
@@ -65,6 +73,7 @@ async function recognize(filePath, kind = 'photo') {
     throw new Error((body && body.error) || '识别服务返回异常，请稍后重试');
   }
   if (!body || !Array.isArray(body.candidates)) throw new Error('识别服务返回格式不正确');
+  if (model === 'trained' && body.meta?.engine !== 'trained') throw new Error('识别服务器版本过旧，请更新服务以启用自训练模型选择。');
   if (kind === 'single') {
     const raw = body.candidates[0];
     const rows = normalize(raw ? [raw] : []);
@@ -76,4 +85,4 @@ async function recognize(filePath, kind = 'photo') {
   return normalize(body.candidates);
 }
 
-module.exports = { recognize, normalize, enabled: () => Boolean(config.visionUrl) };
+module.exports = { recognize, normalize, enabled: () => Boolean(endpoint()) };

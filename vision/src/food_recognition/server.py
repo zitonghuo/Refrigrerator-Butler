@@ -95,7 +95,17 @@ def recognize_payload(
     recognizer: FoodRecognizer,
     payload: dict[str, Any],
     single=None,
+    trained=None,
 ) -> dict[str, Any]:
+    requested_model = payload.get("model")
+    if requested_model not in (None, "trained"):
+        raise ValueError("不支持的识别模型")
+    if requested_model == "trained":
+        if trained is None:
+            raise ValueError("自训练模型尚未加载")
+        if payload.get("kind") != "photo":
+            raise ValueError("自训练模型入口目前支持照片识别")
+        recognizer = trained
     kind = payload.get("kind")
     if kind == "single" and single is None:
         raise ValueError("当前服务未配置单品参考模型")
@@ -156,6 +166,7 @@ def recognize_payload(
     return {
         "candidates": aggregate_candidates(detections),
         "meta": {
+            "engine": "trained" if requested_model == "trained" else "default",
             "model": str(recognizer.weights),
             "device": recognizer.device,
             "frames": len(images),
@@ -165,6 +176,7 @@ def recognize_payload(
 
 class VisionHandler(BaseHTTPRequestHandler):
     single = None
+    trained = None
     recognizer: FoodRecognizer
 
     def log_message(self, *args: Any) -> None:
@@ -234,7 +246,7 @@ class VisionHandler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(size))
             if not isinstance(payload, dict):
                 raise ValueError("请求必须是对象")
-            self.send_json(200, recognize_payload(self.recognizer, payload, self.single))
+            self.send_json(200, recognize_payload(self.recognizer, payload, self.single, self.trained))
         except (ValueError, TypeError, binascii.Error, json.JSONDecodeError) as error:
             self.send_json(400, {"error": str(error) or "识别请求格式不正确"})
         except Exception:
@@ -258,7 +270,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--backend",
-        choices=["hybrid", "general", "world"],
+        choices=["trained", "hybrid", "general", "world"],
         default="hybrid",
     )
     parser.add_argument(
@@ -305,7 +317,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         recognizer = FoodRecognizer(
-            args.weights,
+            args.produce_weights if args.backend == "trained" else args.weights,
             device=args.device,
             confidence_threshold=args.conf,
             iou_threshold=args.iou,
@@ -314,6 +326,12 @@ def main(argv: list[str] | None = None) -> int:
             augment=args.augment,
         )
     VisionHandler.recognizer = recognizer
+    if args.backend == "trained":
+        VisionHandler.trained = recognizer
+    elif args.backend == "hybrid":
+        VisionHandler.trained = recognizer.produce
+    else:
+        VisionHandler.trained = None
     if bool(args.single_weights) != bool(args.single_references):
         raise ValueError("Specify both --single-weights and --single-references")
     if args.single_weights:
