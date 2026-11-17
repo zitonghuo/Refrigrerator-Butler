@@ -9,7 +9,7 @@ function setup(overrides={}){
  let user={homeId:'h'},calls=0,now=Date.now();let tail=Promise.resolve();
  const store={transaction(fn){const task=tail.then(()=>fn({get:async c=>c==='fridge_users'?user:{members:[{id:'u'}]},put:async(c,id,u)=>{user=u}}));tail=task.catch(()=>{});return task;}};
  const service=async()=>({ok:true,data:{user:{id:'u'}}});
- const run=createVision({store,service,env:{GLM_VISION_READY:'true',ZHIPU_API_KEY:'test'},clock:()=>now,request:async(url,opts)=>{calls++;assert.equal(JSON.parse(opts.body).model,'glm-4v-flash');return new Response(JSON.stringify({choices:[{message:{content:'{"candidates":[{"name":"苹果","quantity":99,"expiry":"2099-01-01"}]}'}}]}));},...overrides});
+ const run=createVision({store,service,env:{GLM_VISION_READY:'true',ZHIPU_API_KEY:'test'},clock:()=>now,request:async(url,opts)=>{calls++;assert.equal(JSON.parse(opts.body).model,'glm-4.6v-flash');return new Response(JSON.stringify({choices:[{message:{content:'{"candidates":[{"name":"苹果","quantity":99,"expiry":"2099-01-01"}]}'}}]}));},...overrides});
  const imageBase64=Buffer.from([255,216,255,0,0,0,0,0,0,0,0,0]).toString('base64');
  return {run,event:{action:'vision.recognize',data:{imageBase64,consentVersion:CONSENT}},calls:()=>calls,user:()=>user};
 }
@@ -38,3 +38,4 @@ test('receipt rows keep printed words, exclude price lines and split OCR-fragmen
 });
 
 test('GLM filters rare non-Chinese foods from free-text candidates',()=>{const out=parse(JSON.stringify({candidates:[{name:'鹰嘴豆'},{name:'塔可'},{name:'Taco'},{name:'苹果'}]}));assert.deepEqual(out.map(x=>x.name),['苹果']);});
+test('GLM tolerates a missing closing bracket in otherwise valid JSON',()=>{const out=parse('```json\n{"candidates":[{"name":"番茄"}}\n```');assert.deepEqual(out.map(x=>x.name),['番茄']);});
