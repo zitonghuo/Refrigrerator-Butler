@@ -9,6 +9,8 @@ module.exports = {
   // 真机测试改成电脑局域网 IP，例如 http://192.168.1.10:8770/recognize；发布前清空。
   // 若本机服务设置了 FRIDGE_VISION_TOKEN，把同一个值填到 visionToken（不要提交真实令牌）。
   visionUrl: '',
+  // Only the developer-tools simulator can use the computer's loopback address.
+  devtoolsVisionUrl: 'http://127.0.0.1:8770/recognize',
   singleVisionLocal: false,
   visionToken: '',
   policyVersion: '2026-10-27-reminders',

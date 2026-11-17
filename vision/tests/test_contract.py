@@ -1,6 +1,20 @@
 from food_recognition.service import FoodCandidate, RecognitionResult, deduplicate_candidates
 from food_recognition.server import aggregate_candidates, image_suffix
 from food_recognition import catalog
+from food_recognition.server import recognize_payload
+
+
+def test_trained_model_selection_rejects_missing_model_and_wrong_mode():
+    for payload, expected in [
+        ({"kind": "photo", "model": "trained", "images": ["AA=="]}, "尚未加载"),
+        ({"kind": "photo", "model": "unknown"}, "不支持"),
+    ]:
+        try:
+            recognize_payload(None, payload)
+        except ValueError as error:
+            assert expected in str(error)
+        else:
+            raise AssertionError("An unavailable model must not fall back")
 
 
 def test_result_contract_is_stable() -> None:

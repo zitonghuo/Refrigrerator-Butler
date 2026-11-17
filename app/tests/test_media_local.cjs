@@ -29,6 +29,21 @@ function setup(result) {
   page.setData = patch => Object.assign(page.data, patch);
   return { page, cloudCalls: () => cloudCalls, options: () => options, preview: () => preview };
 }
+test('model selector routes explicitly and stays fixed during recognition', async () => {
+  const { page } = setup(() => {});
+  const calls = [];
+  page.recognizeLocal = async () => calls.push('trained');
+  page.recognizeGlm = async () => calls.push('zhipu');
+  page.selectRecognitionModel({ detail: { value: 'trained' } });
+  await page.recognizeSelected({});
+  page.data.busy = true;
+  page.selectRecognitionModel({ detail: { value: 'zhipu' } });
+  assert.equal(page.data.recognitionModel, 'trained');
+  page.data.busy = false;
+  page.selectRecognitionModel({ detail: { value: 'zhipu' } });
+  await page.recognizeSelected({});
+  assert.deepEqual(calls, ['trained', 'zhipu']);
+});
 test('local photo preview and refresh work without session or media cloud requests', async () => {
   const f = setup(o => o.success({ tempFiles: [{ tempFilePath: 'wxfile://photo', size: 100 }] }));
   f.page.onShow();
