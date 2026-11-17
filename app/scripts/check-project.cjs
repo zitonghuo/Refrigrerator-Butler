@@ -28,7 +28,16 @@ if (process.argv.includes('--release')) {
   if (!config.cloudEnv || /placeholder|待填写|your-/i.test(config.cloudEnv)) failures.push('Cloud environment ID is not configured');
   if (!release.registeredOperator) failures.push('Confirm the registered operator shown in WeChat (team name is not necessarily account subject)');
   if (!release.cloudRegion) failures.push('Confirm the deployed cloud region');
-  for (const [name, value] of Object.entries(release.verified)) if (value !== true) failures.push('Not verified: ' + name);
+  const scope = release.releaseScope || 'full';
+  const glmPhoto = [
+    'cloudFunctionDeployed', 'collectionsDenyClientAccess',
+    'realWechatLogin', 'twoWechatAccountsIsolation', 'realDeviceTest',
+    'privacyGuideConfigured', 'accountFilingCompleted', 'billingAlertsConfigured',
+    'glmVisionConfigured', 'glmVisionRealDeviceTest', 'cloudSdkDependencyReview',
+    'reminderTemplateConfigured', 'reminderTimerVerified', 'reminderWechatDeliveryVerified'
+  ];
+  const required = scope === 'glm-photo' ? glmPhoto : Object.keys(release.verified);
+  for (const name of required) if (release.verified[name] !== true) failures.push('Not verified: ' + name);
 }
 if (failures.length) { console.error(failures.join('\n')); process.exitCode = 1; }
 else console.log('PASS: ' + app.pages.length + ' pages, all actions/routes, deny-all rules and project configuration');
